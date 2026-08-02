@@ -1,0 +1,33 @@
+/* Theme definitions */
+:root, [data-theme="gold"] {
+  --acc: #FFD700;
+  --acc-dim: #AA7700;
+  --acc-glow: rgba(255, 215, 0, 0.35);
+  --acc-tint: rgba(255, 215, 0, 0.08);
+  --acc-border: rgba(255, 215, 0, 0.25);
+  --h1a: #FFD700;
+  --h1b: #FF8C00;
+  --h1c: #FF4500;
+}
+
+[data-theme="sapphire"] {
+  --acc: #4A90E2;
+  --acc-dim: #1A5090;
+  --acc-glow: rgba(74, 144, 226, 0.35);
+  --acc-tint: rgba(74, 144, 226, 0.08);
+  --acc-border: rgba(74, 144, 226, 0.25);
+  --h1a: #70B8FF;
+  --h1b: #4A90E2;
+  --h1c: #1A60C0;
+}
+
+[data-theme="crimson"] {
+  --acc: #FF4444;
+  --acc-dim: #991111;
+  --acc-glow: rgba(255, 68, 68, 0.35);
+  --acc-tint: rgba(255, 68, 68, 0.08);
+  --acc-border: rgba(255, 68, 68, 0.25);
+  --h1a: #FF8888;
+  --h1b: #FF4444;
+  --h1c: #CC1111;
+}
