@@ -1,0 +1,685 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="gold">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>CoC XP Farming Simulator</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700&family=Barlow:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+
+/* ═══════════════════════════════════════
+   THEMES
+═══════════════════════════════════════ */
+:root,[data-theme="gold"]{
+  --acc:#FFD700;--acc-dim:#AA7700;--acc-glow:rgba(255,215,0,0.35);
+  --acc-tint:rgba(255,215,0,0.08);--acc-border:rgba(255,215,0,0.25);
+  --h1a:#FFD700;--h1b:#FF8C00;--h1c:#FF4500;
+}
+[data-theme="sapphire"]{
+  --acc:#4A90E2;--acc-dim:#1A5090;--acc-glow:rgba(74,144,226,0.35);
+  --acc-tint:rgba(74,144,226,0.08);--acc-border:rgba(74,144,226,0.25);
+  --h1a:#70B8FF;--h1b:#4A90E2;--h1c:#1A60C0;
+}
+[data-theme="crimson"]{
+  --acc:#FF4444;--acc-dim:#991111;--acc-glow:rgba(255,68,68,0.35);
+  --acc-tint:rgba(255,68,68,0.08);--acc-border:rgba(255,68,68,0.25);
+  --h1a:#FF8888;--h1b:#FF4444;--h1c:#CC1111;
+}
+
+html{background:#0a0c14}
+body{
+  font-family:'Barlow',sans-serif;
+  background:linear-gradient(135deg,#0a0c14 0%,#111827 50%,#0d1117 100%);
+  color:#eef2ff;min-height:100vh;
+}
+
+/* ── Backgrounds ── */
+.bg-grid{
+  position:fixed;inset:0;pointer-events:none;z-index:0;
+  background-image:
+    linear-gradient(rgba(255,215,0,0.025) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(255,215,0,0.025) 1px,transparent 1px);
+  background-size:60px 60px;
+}
+.bg-blobs{
+  position:fixed;inset:0;pointer-events:none;z-index:0;
+  background:
+    radial-gradient(circle at 15% 15%,rgba(26,42,74,0.18) 0%,transparent 50%),
+    radial-gradient(circle at 85% 85%,rgba(42,26,58,0.18) 0%,transparent 50%);
+}
+
+.shell{position:relative;z-index:1;max-width:900px;margin:0 auto;padding:2.5rem 1.25rem 5rem}
+
+/* ── Theme switcher ── */
+.themes{display:flex;justify-content:center;gap:8px;margin-bottom:2rem}
+.t-btn{
+  display:flex;align-items:center;gap:6px;padding:5px 18px;border-radius:20px;
+  border:1px solid rgba(255,255,255,0.1);background:rgba(255,255,255,0.04);
+  color:#667788;font-family:'Barlow',sans-serif;font-size:11px;font-weight:600;
+  letter-spacing:.1em;cursor:pointer;transition:all .2s;
+}
+.t-btn:hover{border-color:var(--acc);color:var(--acc)}
+.t-btn.on{background:var(--acc);color:#000;border-color:var(--acc);font-weight:700}
+.t-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+
+/* ── Header ── */
+.hdr{text-align:center;margin-bottom:2.5rem}
+.eyebrow{
+  display:inline-block;
+  background:linear-gradient(90deg,transparent,var(--acc-tint),transparent);
+  border:1px solid var(--acc-border);border-radius:4px;
+  padding:4px 24px;margin-bottom:14px;
+  font-size:11px;color:var(--acc);letter-spacing:.3em;text-transform:uppercase;
+}
+.hdr h1{
+  font-family:'Cinzel',serif;
+  font-size:clamp(24px,5vw,42px);font-weight:700;
+  background:linear-gradient(180deg,var(--h1a) 0%,var(--h1b) 55%,var(--h1c) 100%);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;
+  letter-spacing:-.5px;line-height:1.1;margin-bottom:8px;
+}
+.hdr p{color:#667788;font-size:13px;letter-spacing:.08em}
+.hdr-rule{width:80px;height:2px;background:linear-gradient(90deg,transparent,var(--acc),transparent);margin:14px auto 0}
+
+/* ── Card panels ── */
+.card{
+  background:linear-gradient(135deg,#0c1018 0%,#10161e 100%);
+  border-radius:14px;padding:22px 24px;
+  position:relative;overflow:hidden;
+  transition:border-color .25s,box-shadow .25s,background .25s,transform .25s;
+  cursor:default;
+}
+.card:hover{transform:translateX(3px)}
+.card-accent{
+  position:absolute;left:0;top:0;bottom:0;width:3px;border-radius:14px 0 0 14px;
+  transition:opacity .25s;
+}
+.card:hover .card-accent{opacity:1 !important}
+
+.ptitle{
+  font-family:'Cinzel',serif;font-size:10px;font-weight:600;
+  letter-spacing:.2em;text-transform:uppercase;
+  margin-bottom:16px;display:flex;align-items:center;gap:8px;
+}
+.ptitle .ico{font-size:15px}
+.ptitle::after{content:'';flex:1;height:1px;background:rgba(255,255,255,0.06)}
+
+/* ── Layout grids ── */
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px}
+.g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px}
+@media(max-width:620px){.g2,.g3{grid-template-columns:1fr}}
+
+.don-wrap{margin-bottom:14px}
+
+/* ── Fields ── */
+.field{margin-bottom:14px}
+.field:last-child{margin-bottom:0}
+.fl{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}
+.fl-label{font-size:12px;color:#8899aa;font-weight:400}
+.val-badge{
+  font-size:13px;font-weight:700;
+  padding:2px 10px;border-radius:4px;
+  min-width:54px;text-align:center;
+  transition:color .2s,background .2s;
+}
+
+/* number inputs */
+input[type=number]{
+  width:100%;background:#0d1018;border:1px solid rgba(255,255,255,0.07);
+  border-radius:7px;padding:8px 12px;font-size:15px;
+  font-family:'Barlow',sans-serif;font-weight:600;color:#eef2ff;
+  outline:none;transition:border-color .2s;
+}
+input[type=number]:focus{border-color:rgba(255,255,255,0.2)}
+input[type=number]::-webkit-inner-spin-button{opacity:.4}
+
+/* range sliders */
+input[type=range]{
+  -webkit-appearance:none;width:100%;height:4px;
+  border-radius:2px;background:#0d1018;outline:none;cursor:pointer;
+}
+input[type=range]::-webkit-slider-thumb{
+  -webkit-appearance:none;width:16px;height:16px;border-radius:50%;
+  cursor:pointer;transition:transform .15s,filter .15s;
+}
+input[type=range]::-webkit-slider-thumb:hover{transform:scale(1.2)}
+input[type=range]::-moz-range-thumb{
+  width:16px;height:16px;border-radius:50%;border:none;cursor:pointer;
+}
+
+.tip-note{font-size:10px;color:#445566;margin-top:4px}
+
+/* ── Cap label ── */
+.cap-label{
+  display:inline-flex;align-items:center;gap:4px;
+  font-size:10px;color:#445566;font-family:monospace;
+  background:#0d1018;border:1px solid rgba(255,255,255,0.05);
+  border-radius:3px;padding:1px 7px;margin-left:8px;
+}
+
+/* ── Result cards ── */
+.rcards{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:14px}
+@media(max-width:600px){.rcards{grid-template-columns:repeat(2,1fr)}}
+.rcard{
+  background:linear-gradient(135deg,#0c1018,#10161e);
+  border-radius:12px;padding:16px 16px 14px;
+  position:relative;overflow:hidden;
+  transition:border-color .2s,transform .2s,box-shadow .2s;
+}
+.rcard:hover{transform:translateY(-2px)}
+.rc-top{position:absolute;top:0;left:0;right:0;height:3px;border-radius:12px 12px 0 0}
+.rc-lbl{font-size:10px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:#445566;margin-bottom:6px}
+.rc-val{font-family:'Cinzel',serif;font-size:26px;font-weight:700;line-height:1;margin-bottom:4px}
+.rc-sub{font-size:11px;color:#8899aa}
+
+/* ── Progress bar ── */
+.prog-wrap{
+  background:linear-gradient(135deg,#0c1018,#10161e);
+  border-radius:12px;padding:16px 20px;margin-bottom:14px;
+}
+.prog-hdr{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+.prog-lbl{font-size:12px;color:#8899aa}
+.prog-val{font-size:12px;font-weight:600;color:var(--acc)}
+.prog-track{height:10px;background:#0d1018;border-radius:5px;overflow:hidden;border:1px solid rgba(255,255,255,0.05)}
+.prog-fill{
+  height:100%;border-radius:5px;
+  background:linear-gradient(90deg,var(--acc-dim),var(--acc));
+  transition:width .5s cubic-bezier(.4,0,.2,1);
+  position:relative;
+}
+.prog-fill::after{
+  content:'';position:absolute;top:1px;bottom:1px;right:0;
+  width:6px;background:rgba(255,255,255,0.5);border-radius:3px;filter:blur(2px);
+}
+
+/* ── Breakdown ── */
+.bk-wrap{
+  background:linear-gradient(135deg,#0c1018,#10161e);
+  border-radius:12px;padding:16px 20px;margin-bottom:14px;
+}
+.bk-title{
+  font-family:'Cinzel',serif;font-size:10px;font-weight:600;
+  letter-spacing:.2em;text-transform:uppercase;color:#556677;
+  margin-bottom:12px;display:flex;align-items:center;gap:8px;
+}
+.bk-title::after{content:'';flex:1;height:1px;background:rgba(255,255,255,0.05)}
+.bk-row{display:flex;align-items:center;gap:10px;padding:7px 0;border-bottom:1px solid rgba(255,255,255,0.04)}
+.bk-row:last-child{border-bottom:none}
+.bk-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.bk-name{font-size:13px;color:#8899aa;flex:1}
+.bk-bar{width:90px;height:5px;background:#0d1018;border-radius:3px;overflow:hidden;flex-shrink:0}
+.bk-fill{height:100%;border-radius:3px;transition:width .4s ease}
+.bk-xp{font-size:13px;font-weight:600;color:#ccd6e0;min-width:64px;text-align:right}
+.bk-pct{font-size:11px;color:#445566;min-width:36px;text-align:right}
+.sub-row{display:flex;align-items:center;gap:10px;padding:3px 0 3px 18px;border-bottom:1px solid rgba(255,255,255,0.02)}
+.sub-row:last-child{border-bottom:none}
+.sub-name{font-size:11px;color:#556677;flex:1}
+.sub-detail{font-size:10px;color:#445566;min-width:90px;text-align:right}
+.sub-xp{font-size:11px;color:#8899aa;min-width:64px;text-align:right}
+
+/* ── Chart ── */
+.chart-wrap{
+  background:linear-gradient(135deg,#0c1018,#10161e);
+  border-radius:12px;padding:16px 20px;
+}
+.chart-wrap canvas{height:180px !important}
+
+/* ── Warn ── */
+.warn{
+  display:flex;align-items:center;gap:8px;
+  background:rgba(192,57,43,0.08);border:1px solid rgba(192,57,43,0.25);
+  border-radius:8px;padding:9px 12px;font-size:12px;color:#e07060;margin-top:10px;
+}
+.divider{height:1px;background:linear-gradient(90deg,transparent,rgba(255,215,0,0.1),transparent);margin:4px 0 14px}
+
+/* ── Section colors applied via JS ── */
+</style>
+</head>
+<body>
+<div class="bg-grid"></div>
+<div class="bg-blobs"></div>
+<div class="shell">
+
+  <!-- Theme Switcher -->
+  <div class="themes">
+    <button class="t-btn on" data-t="gold"     onclick="setTheme('gold')">    <span class="t-dot" style="background:#FFD700"></span>Gold</button>
+    <button class="t-btn"    data-t="sapphire" onclick="setTheme('sapphire')"><span class="t-dot" style="background:#4A90E2"></span>Sapphire</button>
+    <button class="t-btn"    data-t="crimson"  onclick="setTheme('crimson')"> <span class="t-dot" style="background:#FF4444"></span>Crimson</button>
+  </div>
+
+  <!-- Header -->
+  <header class="hdr">
+    <div class="eyebrow">⚔️ &nbsp;Clash of Clans</div>
+    <h1>XP Farming Simulator</h1>
+    <p>Calculate exactly how long it takes to reach your target level</p>
+    <div class="hdr-rule"></div>
+  </header>
+
+  <!-- Row 1: Profile + Activity -->
+  <div class="g2">
+    <div class="card" id="c-profile" style="border:1px solid #FFD70033">
+      <div class="card-accent" style="background:linear-gradient(180deg,transparent,#FFD700,transparent);opacity:.4"></div>
+      <p class="ptitle" style="color:#AA8800"><span class="ico">🛡️</span>Your Profile</p>
+      <div class="field">
+        <div class="fl"><span class="fl-label">Current XP Level</span></div>
+        <input type="number" id="curLvl" min="1" max="499" value="1"/>
+      </div>
+      <div class="field">
+        <div class="fl">
+          <span class="fl-label">XP Progress in Current Level</span>
+          <span class="val-badge" id="xpPctOut" style="color:#FFD700;background:rgba(255,215,0,0.08);border:1px solid rgba(255,215,0,0.2)">0%</span>
+        </div>
+        <input type="range" id="xpPct" min="0" max="99" value="0" step="1" style="--thumb:#FFD700"/>
+      </div>
+      <div class="field">
+        <div class="fl"><span class="fl-label">Target XP Level</span></div>
+        <input type="number" id="tgtLvl" min="2" max="500" value="2"/>
+      </div>
+    </div>
+
+    <div class="card" id="c-activity" style="border:1px solid #FF6B3533">
+      <div class="card-accent" style="background:linear-gradient(180deg,transparent,#FF6B35,transparent);opacity:.4"></div>
+      <p class="ptitle" style="color:#CC4411"><span class="ico">⚔️</span>Daily Activity</p>
+      <div class="field">
+        <div class="fl">
+          <span class="fl-label">Multiplayer Attacks / Day</span>
+          <span class="val-badge" id="atkOut" style="color:#FF6B35;background:rgba(255,107,53,0.08);border:1px solid rgba(255,107,53,0.2)">0</span>
+        </div>
+        <input type="range" id="atkSlider" min="0" max="20" value="0" step="1"/>
+      </div>
+      <div class="field">
+        <div class="fl">
+          <span class="fl-label">Avg Stars per Attack</span>
+          <span class="val-badge" id="starsOut" style="color:#FF6B35;background:rgba(255,107,53,0.08);border:1px solid rgba(255,107,53,0.2)">0</span>
+        </div>
+        <input type="range" id="starsSlider" min="0" max="3" value="0" step="1"/>
+      </div>
+    </div>
+  </div>
+
+  <!-- Donations — full width -->
+  <div class="don-wrap">
+    <div class="card" style="border:1px solid #00E5FF33">
+      <div class="card-accent" style="background:linear-gradient(180deg,transparent,#00E5FF,transparent);opacity:.4"></div>
+      <p class="ptitle" style="color:#008899">
+        <span class="ico">🤝</span>Daily Donations
+
+      </p>
+      <div class="g3">
+        <div class="field" style="margin-bottom:0">
+          <div class="fl">
+            <span class="fl-label">Troops <em style="font-size:10px;color:#445566;font-style:normal">(1 XP / space)</em></span>
+            <span class="val-badge" id="troopOut" style="color:#00E5FF;background:rgba(0,229,255,0.07);border:1px solid rgba(0,229,255,0.18)">0</span>
+          </div>
+          <input type="range" id="troopSlider" min="0" max="200" value="0" step="1"/>
+          <p class="tip-note">cap: 100,000 housing spaces / day</p>
+        </div>
+        <div class="field" style="margin-bottom:0">
+          <div class="fl">
+            <span class="fl-label">Spells <em style="font-size:10px;color:#445566;font-style:normal">(5 XP / space)</em></span>
+            <span class="val-badge" id="spellOut" style="color:#00E5FF;background:rgba(0,229,255,0.07);border:1px solid rgba(0,229,255,0.18)">0</span>
+          </div>
+          <input type="range" id="spellSlider" min="0" max="200" value="0" step="1"/>
+          <p class="tip-note">cap: 10,000 housing spaces / day</p>
+        </div>
+        <div class="field" style="margin-bottom:0">
+          <div class="fl">
+            <span class="fl-label">Siege Machines <em style="font-size:10px;color:#445566;font-style:normal">(30 XP ea)</em></span>
+            <span class="val-badge" id="siegeOut" style="color:#00E5FF;background:rgba(0,229,255,0.07);border:1px solid rgba(0,229,255,0.18)">0</span>
+          </div>
+          <input type="range" id="siegeSlider" min="0" max="200" value="0" step="1"/>
+          <p class="tip-note">cap: 1,000 siege machines / day</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Row 3: Builders + War -->
+  <div class="g2">
+    <div class="card" style="border:1px solid #4CAF5033">
+      <div class="card-accent" style="background:linear-gradient(180deg,transparent,#4CAF50,transparent);opacity:.4"></div>
+      <p class="ptitle" style="color:#2E7D32"><span class="ico">🏗️</span>Builders</p>
+      <div class="field">
+        <div class="fl">
+          <span class="fl-label">Number of Builders</span>
+          <span class="val-badge" id="bldOut" style="color:#4CAF50;background:rgba(76,175,80,0.08);border:1px solid rgba(76,175,80,0.2)">0</span>
+        </div>
+        <input type="range" id="bldSlider" min="0" max="6" value="0" step="1"/>
+      </div>
+      <div class="field">
+        <div class="fl">
+          <span class="fl-label">Avg Upgrade Time (days)</span>
+          <span class="val-badge" id="upgOut" style="color:#4CAF50;background:rgba(76,175,80,0.08);border:1px solid rgba(76,175,80,0.2)">0d</span>
+        </div>
+        <input type="range" id="upgSlider" min="0" max="18" value="0" step="0.5"/>
+      </div>
+      <p class="tip-note">XP ≈ √(upgrade duration in seconds) per builder slot</p>
+    </div>
+
+    <div class="card" style="border:1px solid #B04FFF33">
+      <div class="card-accent" style="background:linear-gradient(180deg,transparent,#B04FFF,transparent);opacity:.4"></div>
+      <p class="ptitle" style="color:#6A1B9A"><span class="ico">🏰</span>Clan War &amp; Events</p>
+      <div class="field">
+        <div class="fl">
+          <span class="fl-label">War Attacks / Week</span>
+          <span class="val-badge" id="warOut" style="color:#B04FFF;background:rgba(176,79,255,0.08);border:1px solid rgba(176,79,255,0.2)">0</span>
+        </div>
+        <input type="range" id="warSlider" min="0" max="14" value="0" step="1"/>
+      </div>
+      <div class="field">
+        <div class="fl">
+          <span class="fl-label">Avg War Stars per Attack</span>
+          <span class="val-badge" id="warStarsOut" style="color:#B04FFF;background:rgba(176,79,255,0.08);border:1px solid rgba(176,79,255,0.2)">0</span>
+        </div>
+        <input type="range" id="warStarsSlider" min="0" max="3" value="0" step="1"/>
+      </div>
+      <div class="field">
+        <div class="fl">
+          <span class="fl-label">Seasonal XP Bonus / Day</span>
+          <span class="val-badge" id="seasonOut" style="color:#B04FFF;background:rgba(176,79,255,0.08);border:1px solid rgba(176,79,255,0.2)">0</span>
+        </div>
+        <input type="range" id="seasonSlider" min="0" max="200" value="0" step="5"/>
+      </div>
+    </div>
+  </div>
+
+  <div class="divider"></div>
+
+  <!-- Dynamic results -->
+  <div id="results"></div>
+
+  <!-- Chart -->
+  <div class="chart-wrap" style="border:1px solid rgba(255,255,255,0.05)">
+    <p class="bk-title"><span>📊</span>XP Sources — Daily Bar Chart</p>
+    <canvas id="bkChart"></canvas>
+  </div>
+
+  <!-- Commander Tips -->
+  <div style="margin-top:14px;background:linear-gradient(135deg,#0f1420,#141c2c);border:1px solid var(--acc-border);border-radius:14px;padding:20px 24px">
+    <div style="font-size:10px;color:var(--acc);letter-spacing:.25em;text-transform:uppercase;font-weight:700;margin-bottom:14px">⚡ Commander Tips</div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px">
+      <div style="display:flex;gap:10px;align-items:flex-start"><span style="font-size:18px;flex-shrink:0">🔨</span><span style="font-size:12px;color:#8899aa;line-height:1.6">Never let builders sit idle — even a cheap 1-hour upgrade gives XP</span></div>
+      <div style="display:flex;gap:10px;align-items:flex-start"><span style="font-size:18px;flex-shrink:0">🛡️</span><span style="font-size:12px;color:#8899aa;line-height:1.6">Clan War attacks double as XP + loot — never skip them</span></div>
+      <div style="display:flex;gap:10px;align-items:flex-start"><span style="font-size:18px;flex-shrink:0">💎</span><span style="font-size:12px;color:#8899aa;line-height:1.6">Season Pass rewards fund faster upgrades and more XP</span></div>
+    </div>
+  </div>
+
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<script>
+/* ── Theme ── */
+function setTheme(t){
+  document.documentElement.setAttribute('data-theme',t);
+  document.querySelectorAll('.t-btn').forEach(b=>b.classList.toggle('on',b.dataset.t===t));
+  // Update range thumb colors to match theme accent
+  const acc={gold:'#FFD700',sapphire:'#4A90E2',crimson:'#FF4444'}[t];
+  document.querySelectorAll('input[type=range]').forEach(r=>{
+    r.style.setProperty('--thumb',acc);
+  });
+  update();
+}
+
+/* Dynamic thumb color via CSS trick */
+const styleEl=document.createElement('style');
+document.head.appendChild(styleEl);
+function applyThumbStyles(){
+  const cards=[
+    {ids:['xpPct'],color:'#FFD700'},
+    {ids:['atkSlider','starsSlider'],color:'#FF6B35'},
+    {ids:['troopSlider','spellSlider','siegeSlider'],color:'#00E5FF'},
+    {ids:['bldSlider','upgSlider'],color:'#4CAF50'},
+    {ids:['warSlider','warStarsSlider','seasonSlider'],color:'#B04FFF'},
+  ];
+  let css='';
+  cards.forEach(({ids,color})=>{
+    ids.forEach(id=>{
+      css+=`#${id}::-webkit-slider-thumb{background:radial-gradient(circle at 35% 35%,${color}dd,${color});box-shadow:0 0 8px ${color}88;}`;
+      css+=`#${id}::-moz-range-thumb{background:${color};}`;
+    });
+  });
+  styleEl.textContent=css;
+}
+applyThumbStyles();
+
+/* ── XP Math ── */
+function xpForLevel(l){
+  if(l===1)return 30;
+  if(l<=200)return(l-1)*50;
+  if(l<=299)return(l-200)*500+9500;
+  return(l-300)*1000+60000;
+}
+function cumulXP(l){
+  if(l<=1)return 0;
+  if(l<=201)return(l-1)*(l-2)*25+30;
+  if(l<=299)return 250*Math.pow(l-200,2)+9250*(l-200)+985530;
+  return 500*Math.pow(l-300,2)+59500*(l-300)+4410530;
+}
+function totalNeeded(cur,pct,tgt){
+  const earned=Math.round(xpForLevel(cur)*pct/100);
+  return Math.max(0,cumulXP(tgt)-cumulXP(cur)-earned);
+}
+function fmtK(v){
+  if(v===0)return'0';
+  if(v>=1000000)return(v/1000000).toFixed(1)+'M';
+  if(v>=1000)return parseFloat((v/1000).toFixed(1))+'k';
+  return String(v);
+}
+function loc(v){return v.toLocaleString()}
+
+/* ── Inputs ── */
+function getInputs(){
+  return{
+    atk:    +document.getElementById('atkSlider').value,
+    stars:  +document.getElementById('starsSlider').value,
+    troopSV:+document.getElementById('troopSlider').value,
+    spellSV:+document.getElementById('spellSlider').value,
+    siegeSV:+document.getElementById('siegeSlider').value,
+    bld:    +document.getElementById('bldSlider').value,
+    upg:    +document.getElementById('upgSlider').value,
+    war:    +document.getElementById('warSlider').value,
+    warStars:+document.getElementById('warStarsSlider').value,
+    season: +document.getElementById('seasonSlider').value,
+  };
+}
+function calcXP(i){
+  const troopDon=i.troopSV*500;
+  const spellDon=i.spellSV*50;
+  const siegeDon=i.siegeSV*5;
+  const atkXP   =i.atk*(i.stars+1);
+  const troopXP =troopDon*1;
+  const spellXP =spellDon*5;
+  const siegeXP =siegeDon*30;
+  const donXP   =troopXP+spellXP+siegeXP;
+  const upgSec  =i.upg*86400;
+  const bldXP   =i.upg>0?Math.round(i.bld*Math.sqrt(upgSec)/i.upg):0;
+  const warXP   =Math.round((i.war/7)*(i.warStars+1)*4);
+  const seasonXP=i.season;
+  return{atkXP,donXP,troopXP,spellXP,siegeXP,troopDon,spellDon,siegeDon,bldXP,warXP,seasonXP,
+    total:atkXP+donXP+bldXP+warXP+seasonXP};
+}
+
+const BAR_COLORS=['#FFD700','#2E86DE','#00E5FF','#E04040','#B04FFF'];
+
+/* ── Chart ── */
+let chartInst=null;
+function drawChart(atk,bld,don,war,season){
+  const ctx=document.getElementById('bkChart');
+  if(!ctx)return;
+  if(chartInst)chartInst.destroy();
+  chartInst=new Chart(ctx,{
+    type:'bar',
+    data:{
+      labels:['Attacks','Builders','Donations','Wars','Season'],
+      datasets:[{
+        label:'Daily XP',
+        data:[atk,bld,don,war,season],
+        backgroundColor:BAR_COLORS,
+        borderRadius:6,borderSkipped:false,
+      }]
+    },
+    options:{
+      responsive:true,maintainAspectRatio:false,
+      animation:{duration:400,easing:'easeOutQuart'},
+      plugins:{
+        legend:{display:false},
+        tooltip:{
+          backgroundColor:'#10161e',
+          borderColor:'rgba(255,215,0,0.2)',borderWidth:1,
+          titleColor:'#FFD700',bodyColor:'#8899aa',padding:10,
+          callbacks:{label:c=>'  '+loc(c.parsed.y)+' XP / day'}
+        }
+      },
+      scales:{
+        x:{grid:{display:false},ticks:{font:{size:11,family:'Barlow'},color:'#556677'}},
+        y:{
+          grid:{color:'rgba(255,255,255,0.04)'},border:{display:false},
+          ticks:{font:{size:11,family:'Barlow'},color:'#556677',callback:v=>fmtK(v)+' XP'}
+        }
+      }
+    }
+  });
+}
+
+/* ── Hover glow for cards ── */
+const cardDefs=[
+  {id:'c-profile',  color:'#FFD700',glow:'rgba(255,215,0,0.22)'},
+  {id:'c-activity', color:'#FF6B35',glow:'rgba(255,107,53,0.22)'},
+];
+cardDefs.forEach(({id,color,glow})=>{
+  const el=document.getElementById(id);
+  if(!el)return;
+  el.addEventListener('mouseenter',()=>{
+    el.style.borderColor=color+'66';
+    el.style.boxShadow=`0 0 28px ${glow},0 4px 20px rgba(0,0,0,0.5)`;
+    el.style.background='linear-gradient(135deg,#0f1420,#131c2e)';
+  });
+  el.addEventListener('mouseleave',()=>{
+    el.style.borderColor=color+'33';
+    el.style.boxShadow='0 2px 12px rgba(0,0,0,0.4)';
+    el.style.background='linear-gradient(135deg,#0c1018,#10161e)';
+  });
+});
+// Wire hover for all .card elements generically too
+document.querySelectorAll('.card:not(#c-profile):not(#c-activity)').forEach(el=>{
+  const borderInit=el.style.borderColor;
+  el.addEventListener('mouseenter',()=>{
+    el.style.boxShadow='0 0 28px rgba(255,255,255,0.05),0 4px 20px rgba(0,0,0,0.5)';
+    el.style.background='linear-gradient(135deg,#0f1420,#131c2e)';
+  });
+  el.addEventListener('mouseleave',()=>{
+    el.style.boxShadow='0 2px 12px rgba(0,0,0,0.4)';
+    el.style.background='linear-gradient(135deg,#0c1018,#10161e)';
+  });
+});
+
+/* ── Main update ── */
+function update(){
+  const curLvl=Math.max(1,Math.min(499,+document.getElementById('curLvl').value||1));
+  const tgtLvl=Math.max(curLvl+1,Math.min(500,+document.getElementById('tgtLvl').value||curLvl+1));
+  const xpPct =+document.getElementById('xpPct').value;
+  const inp=getInputs();
+  const xp =calcXP(inp);
+
+  document.getElementById('xpPctOut').textContent  =xpPct+'%';
+  document.getElementById('atkOut').textContent     =inp.atk;
+  document.getElementById('starsOut').textContent   =inp.stars;
+  document.getElementById('bldOut').textContent     =inp.bld;
+  document.getElementById('upgOut').textContent     =inp.upg+'d';
+  document.getElementById('warOut').textContent     =inp.war;
+  document.getElementById('warStarsOut').textContent=inp.warStars;
+  document.getElementById('seasonOut').textContent  =inp.season;
+  document.getElementById('troopOut').textContent   =fmtK(inp.troopSV*500);
+  document.getElementById('spellOut').textContent   =fmtK(inp.spellSV*50);
+  document.getElementById('siegeOut').textContent   =fmtK(inp.siegeSV*5);
+
+  const needed=totalNeeded(curLvl,xpPct,tgtLvl);
+  const days  =xp.total>0?Math.ceil(needed/xp.total):Infinity;
+  const timeStr=days===Infinity?'—':days<365?days+'d':(days/365).toFixed(1)+'y';
+  const timeLong=days===Infinity?'No XP gained':
+    days<=1?'1 day':days<7?days+' days':
+    days<30?(days/7).toFixed(1)+' weeks':
+    days<365?(days/30).toFixed(1)+' months':(days/365).toFixed(1)+' years';
+
+  const xpNow =xpForLevel(curLvl);
+  const earned=Math.round(xpNow*xpPct/100);
+
+  const sources=[
+    {n:'Multiplayer Attacks',xp:xp.atkXP,   c:BAR_COLORS[0]},
+    {n:'Builder Upgrades',   xp:xp.bldXP,   c:BAR_COLORS[1]},
+    {n:'Donations',          xp:xp.donXP,   c:BAR_COLORS[2],sub:true},
+    {n:'Clan Wars',          xp:xp.warXP,   c:BAR_COLORS[3]},
+    {n:'Seasonal / Events',  xp:xp.seasonXP,c:BAR_COLORS[4]},
+  ];
+
+  const bkRows=sources.map(s=>{
+    const pct=xp.total>0?Math.round(s.xp/xp.total*100):0;
+    let subs='';
+    if(s.sub&&xp.donXP>0){
+      subs=`
+        <div class="sub-row"><span class="sub-name">↳ Troops (${fmtK(xp.troopDon)} spaces)</span><span class="sub-detail">× 1 XP / space</span><span class="sub-xp">${loc(xp.troopXP)} XP</span></div>
+        <div class="sub-row"><span class="sub-name">↳ Spells (${fmtK(xp.spellDon)} spaces)</span><span class="sub-detail">× 5 XP / space</span><span class="sub-xp">${loc(xp.spellXP)} XP</span></div>
+        <div class="sub-row"><span class="sub-name">↳ Siege Machines (${fmtK(xp.siegeDon)})</span><span class="sub-detail">× 30 XP each</span><span class="sub-xp">${loc(xp.siegeXP)} XP</span></div>`;
+    }
+    return`<div class="bk-row">
+      <span class="bk-dot" style="background:${s.c}"></span>
+      <span class="bk-name">${s.n}</span>
+      <div class="bk-bar"><div class="bk-fill" style="width:${pct}%;background:${s.c}"></div></div>
+      <span class="bk-xp">${loc(s.xp)}</span>
+      <span class="bk-pct">${pct}%</span>
+    </div>${subs}`;
+  }).join('');
+
+  const warns=[];
+  if(xp.total===0)warns.push('Set some daily activities to see your farming estimate.');
+  if(days>365*2)  warns.push('Target is over 2 years away — try a closer target or increase activity.');
+
+  const rcards=[
+    {lbl:'XP Needed', val:needed>=1000?fmtK(needed):loc(needed), sub:`to reach lvl ${tgtLvl}`, c:'linear-gradient(90deg,#AA7700,#FFD700)', vc:'#FFD700'},
+    {lbl:'Daily XP',  val:fmtK(xp.total), sub:'at current pace', c:'linear-gradient(90deg,#1A5276,#2E86DE)', vc:'#ccd6e0'},
+    {lbl:'Time to Target', val:timeStr, sub:timeLong, c:'linear-gradient(90deg,#AA7700,#FFD700,#FFF066)', vc:'#FFD700', hl:true},
+    {lbl:'Levels to Climb', val:tgtLvl-curLvl, sub:`lvl ${curLvl} → ${tgtLvl}`, c:'linear-gradient(90deg,#1D6A35,#27AE60)', vc:'#ccd6e0'},
+  ];
+
+  document.getElementById('results').innerHTML=`
+    <div class="rcards">
+      ${rcards.map(r=>`
+        <div class="rcard" style="border:1px solid rgba(255,255,255,0.06);"
+          onmouseenter="this.style.transform='translateY(-3px)';this.style.boxShadow='0 8px 24px rgba(0,0,0,0.5)'"
+          onmouseleave="this.style.transform='';this.style.boxShadow=''">
+          <div class="rc-top" style="background:${r.c}"></div>
+          <div class="rc-lbl">${r.lbl}</div>
+          <div class="rc-val" style="color:${r.vc};${r.hl?'text-shadow:0 0 20px rgba(255,215,0,0.4)':''}">${r.val}</div>
+          <div class="rc-sub">${r.sub}</div>
+        </div>`).join('')}
+    </div>
+
+    <div class="prog-wrap" style="border:1px solid rgba(255,255,255,0.05)">
+      <div class="prog-hdr">
+        <span class="prog-lbl">Level ${curLvl} Progress</span>
+        <span class="prog-val">${xpPct}% &nbsp;·&nbsp; ${earned.toLocaleString()} / ${xpNow.toLocaleString()} XP</span>
+      </div>
+      <div class="prog-track"><div class="prog-fill" style="width:${xpPct}%"></div></div>
+    </div>
+
+    <div class="bk-wrap" style="border:1px solid rgba(255,255,255,0.05)">
+      <p class="bk-title"><span>⚡</span>Daily XP Breakdown</p>
+      ${bkRows}
+      <div style="display:flex;justify-content:flex-end;padding-top:8px;font-size:12px;color:#8899aa;">
+        Total:&nbsp;<strong style="color:var(--acc)">${loc(xp.total)} XP / day</strong>
+      </div>
+    </div>
+
+    ${warns.map(w=>`<div class="warn">⚠️ ${w}</div>`).join('')}
+  `;
+
+  drawChart(xp.atkXP,xp.bldXP,xp.donXP,xp.warXP,xp.seasonXP);
+}
+
+document.querySelectorAll('input').forEach(el=>el.addEventListener('input',update));
+update();
+</script>
+</body>
+</html>

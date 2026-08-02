@@ -1,0 +1,416 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>CoC XP Sim — Brutalist</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=IBM+Plex+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+:root{
+  --black:#0A0A0A;
+  --white:#F4F2EE;
+  --yellow:#FFD600;
+  --red:#E63946;
+  --gray:#222;
+  --gray2:#333;
+  --gray3:#666;
+  --border:2px solid var(--white);
+}
+html{background:var(--black);}
+body{
+  font-family:'IBM Plex Mono',monospace;
+  background:var(--black);
+  color:var(--white);
+  min-height:100vh;
+  padding:0;
+}
+
+/* thick border frame */
+.frame{
+  max-width:900px;
+  margin:0 auto;
+  border-left:4px solid var(--white);
+  border-right:4px solid var(--white);
+  min-height:100vh;
+}
+
+/* header */
+.site-header{
+  border-bottom:4px solid var(--white);
+  padding:0;
+  display:grid;
+  grid-template-columns:auto 1fr auto;
+  align-items:stretch;
+}
+.header-label{
+  border-right:4px solid var(--white);
+  padding:12px 16px;
+  font-size:10px;
+  letter-spacing:0.25em;
+  color:var(--gray3);
+  writing-mode:vertical-rl;
+  text-orientation:mixed;
+  transform:rotate(180deg);
+  white-space:nowrap;
+  display:flex;align-items:center;
+}
+.header-main{padding:24px 28px 20px;}
+.header-title{
+  font-family:'Bebas Neue',sans-serif;
+  font-size:clamp(40px,8vw,88px);
+  line-height:0.9;
+  letter-spacing:0.02em;
+  color:var(--white);
+  margin-bottom:6px;
+}
+.header-title span{color:var(--yellow);}
+.header-sub{font-size:11px;color:var(--gray3);letter-spacing:0.15em;}
+.header-badge{
+  border-left:4px solid var(--white);
+  background:var(--yellow);
+  color:var(--black);
+  padding:16px 14px;
+  font-family:'Bebas Neue',sans-serif;
+  font-size:13px;
+  letter-spacing:0.1em;
+  writing-mode:vertical-rl;
+  display:flex;align-items:center;justify-content:center;
+}
+
+/* body */
+.body-wrap{padding:0 28px 40px;}
+
+/* section label */
+.sec-label{
+  font-size:9px;
+  letter-spacing:0.3em;
+  text-transform:uppercase;
+  color:var(--gray3);
+  padding:10px 0 4px;
+  border-top:1px solid var(--gray2);
+  margin-top:20px;
+}
+.sec-label:first-child{margin-top:20px;}
+
+/* grid */
+.grid-2{display:grid;grid-template-columns:1fr 1fr;border:var(--border);margin-top:4px;}
+.grid-2 .panel:first-child{border-right:var(--border);}
+@media(max-width:560px){
+  .grid-2{grid-template-columns:1fr;}
+  .grid-2 .panel:first-child{border-right:none;border-bottom:var(--border);}
+}
+
+.panel{padding:16px 18px;}
+.panel-title{
+  font-family:'Bebas Neue',sans-serif;
+  font-size:16px;
+  letter-spacing:0.12em;
+  color:var(--white);
+  margin-bottom:14px;
+  padding-bottom:8px;
+  border-bottom:1px solid var(--gray2);
+}
+
+.field{margin-bottom:12px;}
+.field:last-child{margin-bottom:0;}
+.field-label{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:4px;}
+.field-label-text{font-size:10px;letter-spacing:0.08em;color:var(--gray3);}
+.val-num{
+  font-family:'Bebas Neue',sans-serif;
+  font-size:18px;
+  color:var(--yellow);
+  line-height:1;
+}
+
+input[type=number]{
+  width:100%;
+  background:var(--gray);
+  border:2px solid var(--gray2);
+  border-radius:0;
+  padding:6px 8px;
+  font-family:'Bebas Neue',sans-serif;
+  font-size:22px;
+  color:var(--white);
+  outline:none;
+  letter-spacing:0.08em;
+}
+input[type=number]:focus{border-color:var(--yellow);}
+
+input[type=range]{
+  -webkit-appearance:none;width:100%;height:2px;
+  background:var(--gray2);outline:none;cursor:pointer;
+}
+input[type=range]::-webkit-slider-thumb{
+  -webkit-appearance:none;
+  width:14px;height:14px;
+  background:var(--yellow);
+  cursor:pointer;
+  border:2px solid var(--black);
+  clip-path:none;
+}
+
+/* result row */
+.result-row{
+  display:grid;
+  grid-template-columns:repeat(4,1fr);
+  border:var(--border);
+  margin-top:4px;
+}
+@media(max-width:560px){.result-row{grid-template-columns:repeat(2,1fr);}}
+.rcard{
+  padding:14px 12px;
+  border-right:var(--border);
+  position:relative;
+}
+.rcard:last-child{border-right:none;}
+@media(max-width:560px){
+  .rcard:nth-child(2){border-right:none;}
+  .rcard:nth-child(3){border-right:var(--border);}
+  .rcard:nth-child(1),.rcard:nth-child(2){border-bottom:var(--border);}
+}
+.rcard-label{font-size:9px;letter-spacing:0.2em;color:var(--gray3);margin-bottom:4px;}
+.rcard-value{
+  font-family:'Bebas Neue',sans-serif;
+  font-size:34px;
+  color:var(--white);
+  line-height:1;
+  margin-bottom:3px;
+}
+.rcard-value.hot{color:var(--yellow);}
+.rcard-sub{font-size:10px;color:var(--gray3);}
+
+/* progress */
+.prog-section{border:var(--border);padding:14px 16px;margin-top:4px;}
+.prog-hd{display:flex;justify-content:space-between;font-size:10px;color:var(--gray3);margin-bottom:8px;letter-spacing:0.08em;}
+.prog-hd span:last-child{color:var(--white);}
+.prog-track{height:16px;background:var(--gray);border:1px solid var(--gray2);overflow:hidden;}
+.prog-fill{
+  height:100%;
+  background:repeating-linear-gradient(90deg,var(--yellow) 0,var(--yellow) 8px,#B39700 8px,#B39700 16px);
+  transition:width 0.4s ease;
+}
+
+/* breakdown */
+.bk-section{border:var(--border);border-top:none;padding:14px 16px;}
+.bk-hd{font-family:'Bebas Neue',sans-serif;font-size:14px;letter-spacing:0.15em;margin-bottom:10px;padding-bottom:6px;border-bottom:1px solid var(--gray2);}
+.bk-row{display:grid;grid-template-columns:16px 1fr 60px 46px 32px;align-items:center;gap:6px;padding:5px 0;border-bottom:1px solid var(--gray);font-size:11px;}
+.bk-row:last-child{border-bottom:none;}
+.bk-num{font-family:'Bebas Neue',sans-serif;font-size:13px;color:var(--gray3);}
+.bk-name{color:var(--gray3);letter-spacing:0.04em;font-size:10px;}
+.bk-track{height:4px;background:var(--gray2);overflow:hidden;}
+.bk-fill{height:100%;transition:width 0.4s ease;}
+.bk-xp{font-family:'Bebas Neue',sans-serif;font-size:15px;text-align:right;}
+.bk-pct{font-size:10px;color:var(--gray3);text-align:right;}
+
+.chart-section{border:var(--border);border-top:none;padding:14px 16px;}
+.chart-hd{font-family:'Bebas Neue',sans-serif;font-size:14px;letter-spacing:0.15em;margin-bottom:10px;padding-bottom:6px;border-bottom:1px solid var(--gray2);}
+.chart-section canvas{height:160px!important;}
+
+.warn-box{border:2px solid var(--red);padding:8px 12px;font-size:11px;color:var(--red);letter-spacing:0.06em;margin-top:4px;}
+.tip-text{font-size:10px;color:var(--gray3);margin-top:5px;letter-spacing:0.06em;}
+
+/* footer */
+.site-footer{border-top:4px solid var(--white);padding:10px 28px;font-size:9px;color:var(--gray3);letter-spacing:0.15em;display:flex;justify-content:space-between;}
+</style>
+</head>
+<body>
+<div class="frame">
+  <header class="site-header">
+    <div class="header-label">CLASH OF CLANS</div>
+    <div class="header-main">
+      <h1 class="header-title"><span>XP</span> FARMING<br>SIMULATOR</h1>
+      <p class="header-sub">CALCULATE YOUR PATH TO THE NEXT LEVEL</p>
+    </div>
+    <div class="header-badge">V1.0</div>
+  </header>
+
+  <div class="body-wrap">
+    <p class="sec-label">01 / Input Parameters</p>
+    <div class="grid-2">
+      <div class="panel">
+        <p class="panel-title">Profile</p>
+        <div class="field">
+          <div class="field-label"><span class="field-label-text">CURRENT XP LEVEL</span></div>
+          <input type="number" id="curLvl" min="1" max="499" value="50"/>
+        </div>
+        <div class="field">
+          <div class="field-label">
+            <span class="field-label-text">LEVEL PROGRESS</span>
+            <span class="val-num" id="xpPctOut">50%</span>
+          </div>
+          <input type="range" id="xpPct" min="0" max="99" value="50" step="1"/>
+        </div>
+        <div class="field">
+          <div class="field-label"><span class="field-label-text">TARGET XP LEVEL</span></div>
+          <input type="number" id="tgtLvl" min="2" max="500" value="60"/>
+        </div>
+      </div>
+      <div class="panel">
+        <p class="panel-title">Daily Activity</p>
+        <div class="field">
+          <div class="field-label">
+            <span class="field-label-text">ATTACKS / DAY</span>
+            <span class="val-num" id="atkOut">5</span>
+          </div>
+          <input type="range" id="atkSlider" min="0" max="20" value="5" step="1"/>
+        </div>
+        <div class="field">
+          <div class="field-label">
+            <span class="field-label-text">AVG STARS / ATTACK</span>
+            <span class="val-num" id="starsOut">2</span>
+          </div>
+          <input type="range" id="starsSlider" min="0" max="3" value="2" step="1"/>
+        </div>
+        <div class="field">
+          <div class="field-label">
+            <span class="field-label-text">TROOPS DONATED / DAY</span>
+            <span class="val-num" id="donOut">30</span>
+          </div>
+          <input type="range" id="donSlider" min="0" max="200" value="30" step="5"/>
+        </div>
+      </div>
+    </div>
+
+    <div class="grid-2" style="border-top:none;">
+      <div class="panel">
+        <p class="panel-title">Builders</p>
+        <div class="field">
+          <div class="field-label">
+            <span class="field-label-text">BUILDERS ACTIVE</span>
+            <span class="val-num" id="bldOut">4</span>
+          </div>
+          <input type="range" id="bldSlider" min="1" max="6" value="4" step="1"/>
+        </div>
+        <div class="field">
+          <div class="field-label">
+            <span class="field-label-text">AVG UPGRADE TIME</span>
+            <span class="val-num" id="upgOut">5d</span>
+          </div>
+          <input type="range" id="upgSlider" min="0.5" max="18" value="5" step="0.5"/>
+        </div>
+        <p class="tip-text">XP ≈ SQRT(UPGRADE_SECS)</p>
+      </div>
+      <div class="panel">
+        <p class="panel-title">War + Events</p>
+        <div class="field">
+          <div class="field-label">
+            <span class="field-label-text">WAR ATTACKS / WEEK</span>
+            <span class="val-num" id="warOut">2</span>
+          </div>
+          <input type="range" id="warSlider" min="0" max="14" value="2" step="1"/>
+        </div>
+        <div class="field">
+          <div class="field-label">
+            <span class="field-label-text">AVG WAR STARS</span>
+            <span class="val-num" id="warStarsOut">2</span>
+          </div>
+          <input type="range" id="warStarsSlider" min="0" max="3" value="2" step="1"/>
+        </div>
+        <div class="field">
+          <div class="field-label">
+            <span class="field-label-text">SEASONAL XP / DAY</span>
+            <span class="val-num" id="seasonOut">20</span>
+          </div>
+          <input type="range" id="seasonSlider" min="0" max="200" value="20" step="5"/>
+        </div>
+      </div>
+    </div>
+
+    <p class="sec-label">02 / Results</p>
+    <div id="results"></div>
+
+    <p class="sec-label">03 / Chart</p>
+    <div class="chart-section">
+      <p class="chart-hd">Daily XP by Source</p>
+      <canvas id="bkChart"></canvas>
+    </div>
+  </div>
+
+  <footer class="site-footer">
+    <span>CLASH OF CLANS XP SIMULATOR</span>
+    <span>ALL FIGURES APPROXIMATE</span>
+  </footer>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<script>
+const SRC=[
+  {k:'atkXP',  name:'ATTACKS',   color:'#FFD600'},
+  {k:'bldXP',  name:'BUILDERS',  color:'#F4F2EE'},
+  {k:'donXP',  name:'DONATIONS', color:'#888'},
+  {k:'warXP',  name:'WARS',      color:'#E63946'},
+  {k:'seasonXP',name:'SEASON',   color:'#4CC9F0'},
+];
+function xpForLevel(l){
+  if(l===1) return 30;
+  if(l<=200) return (l-1)*50;
+  if(l<=299) return (l-200)*500+9500;
+  return (l-300)*1000+60000;
+}
+function cumulXP(l){
+  if(l<=1) return 0;
+  if(l<=201) return (l-1)*(l-2)*25+30;
+  if(l<=299) return 250*Math.pow(l-200,2)+9250*(l-200)+985530;
+  return 500*Math.pow(l-300,2)+59500*(l-300)+4410530;
+}
+function totalXPNeeded(cur,pct,tgt){
+  const earned=Math.round(xpForLevel(cur)*pct/100);
+  return Math.max(0,cumulXP(tgt)-cumulXP(cur)-earned);
+}
+function calcDaily(){
+  const atk=+document.getElementById('atkSlider').value,stars=+document.getElementById('starsSlider').value,don=+document.getElementById('donSlider').value,bld=+document.getElementById('bldSlider').value,upg=+document.getElementById('upgSlider').value,war=+document.getElementById('warSlider').value,ws=+document.getElementById('warStarsSlider').value,sea=+document.getElementById('seasonSlider').value;
+  return{atkXP:atk*(stars+1),donXP:Math.round(don*0.7),bldXP:Math.round(bld*Math.sqrt(upg*86400)/upg),warXP:Math.round((war/7)*(ws+1)*4),seasonXP:sea};
+}
+let chart=null;
+function update(){
+  const cur=Math.max(1,Math.min(499,+document.getElementById('curLvl').value||1));
+  const tgt=Math.max(cur+1,Math.min(500,+document.getElementById('tgtLvl').value||cur+1));
+  const pct=+document.getElementById('xpPct').value;
+  document.getElementById('xpPctOut').textContent=pct+'%';
+  document.getElementById('atkOut').textContent=document.getElementById('atkSlider').value;
+  document.getElementById('starsOut').textContent=document.getElementById('starsSlider').value;
+  document.getElementById('donOut').textContent=document.getElementById('donSlider').value;
+  document.getElementById('bldOut').textContent=document.getElementById('bldSlider').value;
+  document.getElementById('upgOut').textContent=document.getElementById('upgSlider').value+'d';
+  document.getElementById('warOut').textContent=document.getElementById('warSlider').value;
+  document.getElementById('warStarsOut').textContent=document.getElementById('warStarsSlider').value;
+  document.getElementById('seasonOut').textContent=document.getElementById('seasonSlider').value;
+  const needed=totalXPNeeded(cur,pct,tgt);
+  const d=calcDaily();const tot=SRC.reduce((s,x)=>s+d[x.k],0);
+  const days=tot>0?Math.ceil(needed/tot):Infinity;
+  const timeStr=days===Infinity?'∞':days<365?days+'D':(days/365).toFixed(1)+'Y';
+  const timeSub=days===Infinity?'NO ACTIVITY':days<7?days+' DAYS':days<30?(days/7).toFixed(1)+' WEEKS':days<365?(days/30).toFixed(1)+' MONTHS':(days/365).toFixed(1)+' YEARS';
+  const xpNow=xpForLevel(cur);
+  const bkRows=SRC.map((s,i)=>{const p=tot>0?Math.round(d[s.k]/tot*100):0;return`<div class="bk-row"><span class="bk-num">${String(i+1).padStart(2,'0')}</span><span class="bk-name">${s.name}</span><div class="bk-track"><div class="bk-fill" style="width:${p}%;background:${s.color}"></div></div><span class="bk-xp" style="color:${s.color}">${d[s.k]}</span><span class="bk-pct">${p}%</span></div>`;}).join('');
+  const warns=[tot===0?'ERROR: ZERO DAILY XP':'',days>365?'WARNING: ETA &gt;365 DAYS':''].filter(Boolean).map(w=>`<div class="warn-box">// ${w}</div>`).join('');
+  document.getElementById('results').innerHTML=`
+    <div class="result-row">
+      <div class="rcard"><div class="rcard-label">XP_NEEDED</div><div class="rcard-value">${needed>=1000?(needed/1000).toFixed(1)+'K':needed}</div><div class="rcard-sub">TO LVL ${tgt}</div></div>
+      <div class="rcard"><div class="rcard-label">DAILY_XP</div><div class="rcard-value">${tot}</div><div class="rcard-sub">CURRENT PACE</div></div>
+      <div class="rcard"><div class="rcard-label">TIME_TO_TARGET</div><div class="rcard-value hot">${timeStr}</div><div class="rcard-sub">${timeSub}</div></div>
+      <div class="rcard"><div class="rcard-label">LEVELS_DELTA</div><div class="rcard-value">${tgt-cur}</div><div class="rcard-sub">${cur} → ${tgt}</div></div>
+    </div>
+    <div class="prog-section">
+      <div class="prog-hd"><span>LVL ${cur} PROGRESS</span><span>${pct}% · ${Math.round(xpNow*pct/100).toLocaleString()} / ${xpNow.toLocaleString()} XP</span></div>
+      <div class="prog-track"><div class="prog-fill" style="width:${Math.min(100,pct)}%"></div></div>
+    </div>
+    <div class="bk-section">
+      <p class="bk-hd">Daily XP Breakdown</p>
+      ${bkRows}
+      <div style="text-align:right;font-size:10px;color:#666;padding-top:6px;border-top:1px solid #333;margin-top:6px;letter-spacing:0.15em;">TOTAL: <span style="color:var(--yellow)">${tot.toLocaleString()} XP/DAY</span></div>
+    </div>
+    ${warns}`;
+  if(chart)chart.destroy();
+  chart=new Chart(document.getElementById('bkChart'),{
+    type:'bar',
+    data:{labels:SRC.map(s=>s.name),datasets:[{data:SRC.map(s=>d[s.k]),backgroundColor:SRC.map(s=>s.color),borderRadius:0,borderSkipped:false}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{backgroundColor:'#1A1A1A',borderColor:'#444',borderWidth:2,titleColor:'#F4F2EE',bodyColor:'#888',callbacks:{label:c=>c.parsed.y+' XP/day'}}},scales:{x:{grid:{display:false},ticks:{color:'#555',font:{size:10,family:"'IBM Plex Mono',monospace"}}},y:{grid:{color:'#1F1F1F'},ticks:{color:'#555',font:{size:10,family:"'IBM Plex Mono',monospace"},callback:v=>v+'XP'},border:{display:false}}}}
+  });
+}
+document.querySelectorAll('input').forEach(e=>e.addEventListener('input',update));
+update();
+</script>
+</body>
+</html>

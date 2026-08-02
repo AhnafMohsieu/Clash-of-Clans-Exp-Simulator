@@ -1,0 +1,422 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>CoC XP Sim — Neon</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --cyan:#00FFEA;
+  --magenta:#FF00C8;
+  --yellow:#FFE600;
+  --bg:#040608;
+  --bg2:#080C12;
+  --bg3:#0D1320;
+  --grid-line:rgba(0,255,234,0.06);
+  --text:#C8F0F0;
+  --text-dim:#4A8080;
+}
+html{background:var(--bg);}
+
+/* animated grid background */
+body{
+  font-family:'Share Tech Mono',monospace;
+  background:var(--bg);
+  color:var(--text);
+  min-height:100vh;
+  padding:0;
+  position:relative;
+  overflow-x:hidden;
+}
+body::before{
+  content:'';
+  position:fixed;inset:0;
+  background-image:
+    linear-gradient(var(--grid-line) 1px,transparent 1px),
+    linear-gradient(90deg,var(--grid-line) 1px,transparent 1px);
+  background-size:40px 40px;
+  pointer-events:none;z-index:0;
+  animation:gridPan 30s linear infinite;
+}
+@keyframes gridPan{from{background-position:0 0}to{background-position:40px 40px}}
+
+/* scanlines */
+body::after{
+  content:'';
+  position:fixed;inset:0;
+  background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,0,0,0.07) 2px,rgba(0,0,0,0.07) 4px);
+  pointer-events:none;z-index:1;
+}
+
+.page-shell{position:relative;z-index:2;max-width:860px;margin:0 auto;padding:2rem 1.5rem 4rem;}
+
+/* header */
+.page-header{text-align:center;margin-bottom:2.5rem;}
+.header-pre{font-size:11px;letter-spacing:0.4em;color:var(--cyan);opacity:0.7;margin-bottom:6px;}
+.header-title{
+  font-family:'Orbitron',monospace;
+  font-weight:900;
+  font-size:clamp(20px,4.5vw,42px);
+  color:#fff;
+  text-shadow:0 0 20px var(--cyan),0 0 60px rgba(0,255,234,0.3);
+  letter-spacing:0.06em;
+  line-height:1.1;
+  margin-bottom:6px;
+}
+.header-sub{font-size:11px;color:var(--text-dim);letter-spacing:0.15em;}
+.neon-line{
+  height:1px;
+  background:linear-gradient(90deg,transparent,var(--cyan),var(--magenta),transparent);
+  margin:12px auto;
+  max-width:400px;
+  box-shadow:0 0 8px var(--cyan);
+}
+
+/* blinking cursor */
+.blink{animation:blink 1s step-start infinite;}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:0}}
+
+/* grid */
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px;}
+@media(max-width:580px){.grid-2{grid-template-columns:1fr;}}
+
+/* panel */
+.panel{
+  background:var(--bg2);
+  border:1px solid rgba(0,255,234,0.2);
+  padding:1rem 1.2rem;
+  position:relative;
+  clip-path:polygon(0 0,calc(100% - 12px) 0,100% 12px,100% 100%,12px 100%,0 calc(100% - 12px));
+}
+.panel::before{
+  content:'';
+  position:absolute;top:0;left:0;right:0;
+  height:1px;
+  background:linear-gradient(90deg,transparent,var(--cyan),transparent);
+  box-shadow:0 0 6px var(--cyan);
+}
+.panel-title{
+  font-family:'Orbitron',monospace;
+  font-size:9px;
+  font-weight:700;
+  letter-spacing:0.2em;
+  color:var(--cyan);
+  text-shadow:0 0 8px var(--cyan);
+  margin-bottom:14px;
+  display:flex;align-items:center;gap:8px;
+}
+.panel-title::after{content:'';flex:1;height:1px;background:rgba(0,255,234,0.15);}
+.pt-bracket{color:var(--magenta);font-size:12px;}
+
+.field{margin-bottom:12px;}
+.field:last-child{margin-bottom:0;}
+.field-label{display:flex;justify-content:space-between;align-items:center;margin-bottom:5px;}
+.field-label-text{font-size:11px;color:var(--text-dim);letter-spacing:0.05em;}
+.val-hud{
+  font-family:'Orbitron',monospace;
+  font-size:12px;
+  font-weight:700;
+  color:var(--yellow);
+  text-shadow:0 0 8px var(--yellow);
+  min-width:42px;
+  text-align:right;
+}
+
+input[type=number]{
+  width:100%;
+  background:var(--bg3);
+  border:1px solid rgba(0,255,234,0.25);
+  padding:7px 10px;
+  font-family:'Orbitron',monospace;
+  font-size:14px;
+  font-weight:700;
+  color:var(--cyan);
+  text-shadow:0 0 6px var(--cyan);
+  outline:none;
+  caret-color:var(--cyan);
+}
+input[type=number]:focus{border-color:var(--cyan);box-shadow:0 0 12px rgba(0,255,234,0.2);}
+
+input[type=range]{
+  -webkit-appearance:none;
+  width:100%;height:3px;
+  background:linear-gradient(90deg,rgba(0,255,234,0.15),rgba(0,255,234,0.05));
+  outline:none;cursor:pointer;
+}
+input[type=range]::-webkit-slider-thumb{
+  -webkit-appearance:none;
+  width:14px;height:14px;
+  background:var(--magenta);
+  box-shadow:0 0 10px var(--magenta),0 0 20px rgba(255,0,200,0.4);
+  cursor:pointer;
+  clip-path:polygon(50% 0%,100% 50%,50% 100%,0% 50%);
+}
+
+/* result cards */
+.result-cards{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:14px;}
+@media(max-width:580px){.result-cards{grid-template-columns:repeat(2,1fr);}}
+
+.rcard{
+  background:var(--bg2);
+  border:1px solid rgba(0,255,234,0.15);
+  padding:12px 10px;
+  position:relative;
+  clip-path:polygon(0 0,calc(100% - 8px) 0,100% 8px,100% 100%,0 100%);
+}
+.rcard.hot{border-color:rgba(255,230,0,0.4);box-shadow:0 0 20px rgba(255,230,0,0.1);}
+.rcard-label{font-size:9px;letter-spacing:0.18em;color:var(--text-dim);margin-bottom:6px;}
+.rcard-value{
+  font-family:'Orbitron',monospace;
+  font-size:24px;
+  font-weight:900;
+  color:var(--cyan);
+  text-shadow:0 0 12px var(--cyan);
+  line-height:1;
+  margin-bottom:4px;
+}
+.rcard.hot .rcard-value{color:var(--yellow);text-shadow:0 0 12px var(--yellow);}
+.rcard-sub{font-size:10px;color:var(--text-dim);}
+
+/* progress */
+.progress-section{
+  background:var(--bg2);
+  border:1px solid rgba(0,255,234,0.15);
+  padding:1rem 1.2rem;
+  margin-bottom:14px;
+}
+.prog-header{display:flex;justify-content:space-between;font-size:10px;color:var(--text-dim);margin-bottom:8px;letter-spacing:0.08em;}
+.prog-header span:last-child{color:var(--cyan);}
+.prog-track{height:12px;background:var(--bg3);border:1px solid rgba(0,255,234,0.1);overflow:hidden;position:relative;}
+.prog-fill{
+  height:100%;
+  background:linear-gradient(90deg,var(--cyan),var(--magenta));
+  box-shadow:0 0 10px var(--cyan);
+  transition:width 0.5s ease;
+  position:relative;
+}
+.prog-fill::after{
+  content:'';
+  position:absolute;top:0;bottom:0;right:0;
+  width:3px;
+  background:white;
+  filter:blur(2px);
+  box-shadow:0 0 6px white;
+}
+
+/* breakdown */
+.breakdown-panel{
+  background:var(--bg2);
+  border:1px solid rgba(0,255,234,0.15);
+  padding:1rem 1.2rem;
+  margin-bottom:14px;
+}
+.bk-header{font-family:'Orbitron',monospace;font-size:9px;letter-spacing:0.2em;color:var(--cyan);margin-bottom:12px;display:flex;align-items:center;gap:6px;}
+.bk-header::after{content:'';flex:1;height:1px;background:rgba(0,255,234,0.15);}
+.bk-row{display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid rgba(0,255,234,0.07);}
+.bk-row:last-child{border-bottom:none;}
+.bk-dot{width:6px;height:6px;flex-shrink:0;}
+.bk-name{font-size:11px;color:var(--text-dim);flex:1;letter-spacing:0.04em;}
+.bk-track{width:80px;height:4px;background:var(--bg3);overflow:hidden;flex-shrink:0;}
+.bk-fill{height:100%;transition:width 0.4s ease;}
+.bk-xp{font-family:'Orbitron',monospace;font-size:11px;font-weight:700;color:var(--text);min-width:46px;text-align:right;}
+.bk-pct{font-size:10px;color:var(--text-dim);min-width:28px;text-align:right;}
+
+.chart-panel{background:var(--bg2);border:1px solid rgba(0,255,234,0.15);padding:1rem 1.2rem;margin-bottom:14px;}
+.chart-panel canvas{height:180px!important;}
+
+.warn-box{font-size:11px;color:var(--magenta);border:1px solid rgba(255,0,200,0.2);padding:8px 12px;margin-top:10px;background:rgba(255,0,200,0.04);letter-spacing:0.04em;}
+.tip-text{font-size:10px;color:var(--text-dim);margin-top:5px;letter-spacing:0.06em;}
+</style>
+</head>
+<body>
+<div class="page-shell">
+  <header class="page-header">
+    <p class="header-pre">// SYSTEM ONLINE // <span class="blink">_</span></p>
+    <h1 class="header-title">XP FARM SIM</h1>
+    <p class="header-sub">CLASH OF CLANS · LEVEL PROGRESSION ENGINE</p>
+    <div class="neon-line"></div>
+  </header>
+
+  <div class="grid-2">
+    <div class="panel">
+      <p class="panel-title"><span class="pt-bracket">[</span>PROFILE<span class="pt-bracket">]</span></p>
+      <div class="field">
+        <div class="field-label"><span class="field-label-text">CURRENT XP LEVEL</span></div>
+        <input type="number" id="curLvl" min="1" max="499" value="50"/>
+      </div>
+      <div class="field">
+        <div class="field-label">
+          <span class="field-label-text">LEVEL PROGRESS</span>
+          <span class="val-hud" id="xpPctOut">50%</span>
+        </div>
+        <input type="range" id="xpPct" min="0" max="99" value="50" step="1"/>
+      </div>
+      <div class="field">
+        <div class="field-label"><span class="field-label-text">TARGET XP LEVEL</span></div>
+        <input type="number" id="tgtLvl" min="2" max="500" value="60"/>
+      </div>
+    </div>
+    <div class="panel">
+      <p class="panel-title"><span class="pt-bracket">[</span>DAILY OPS<span class="pt-bracket">]</span></p>
+      <div class="field">
+        <div class="field-label">
+          <span class="field-label-text">ATTACKS / DAY</span>
+          <span class="val-hud" id="atkOut">5</span>
+        </div>
+        <input type="range" id="atkSlider" min="0" max="20" value="5" step="1"/>
+      </div>
+      <div class="field">
+        <div class="field-label">
+          <span class="field-label-text">AVG STARS / ATTACK</span>
+          <span class="val-hud" id="starsOut">2</span>
+        </div>
+        <input type="range" id="starsSlider" min="0" max="3" value="2" step="1"/>
+      </div>
+      <div class="field">
+        <div class="field-label">
+          <span class="field-label-text">TROOPS DONATED / DAY</span>
+          <span class="val-hud" id="donOut">30</span>
+        </div>
+        <input type="range" id="donSlider" min="0" max="200" value="30" step="5"/>
+      </div>
+    </div>
+  </div>
+
+  <div class="grid-2">
+    <div class="panel">
+      <p class="panel-title"><span class="pt-bracket">[</span>BUILD QUEUE<span class="pt-bracket">]</span></p>
+      <div class="field">
+        <div class="field-label">
+          <span class="field-label-text">BUILDERS ACTIVE</span>
+          <span class="val-hud" id="bldOut">4</span>
+        </div>
+        <input type="range" id="bldSlider" min="1" max="6" value="4" step="1"/>
+      </div>
+      <div class="field">
+        <div class="field-label">
+          <span class="field-label-text">AVG UPGRADE TIME</span>
+          <span class="val-hud" id="upgOut">5d</span>
+        </div>
+        <input type="range" id="upgSlider" min="0.5" max="18" value="5" step="0.5"/>
+      </div>
+      <p class="tip-text">// XP = √(upgrade_seconds)</p>
+    </div>
+    <div class="panel">
+      <p class="panel-title"><span class="pt-bracket">[</span>WAR &amp; EVENTS<span class="pt-bracket">]</span></p>
+      <div class="field">
+        <div class="field-label">
+          <span class="field-label-text">WAR ATTACKS / WEEK</span>
+          <span class="val-hud" id="warOut">2</span>
+        </div>
+        <input type="range" id="warSlider" min="0" max="14" value="2" step="1"/>
+      </div>
+      <div class="field">
+        <div class="field-label">
+          <span class="field-label-text">AVG WAR STARS</span>
+          <span class="val-hud" id="warStarsOut">2</span>
+        </div>
+        <input type="range" id="warStarsSlider" min="0" max="3" value="2" step="1"/>
+      </div>
+      <div class="field">
+        <div class="field-label">
+          <span class="field-label-text">SEASONAL XP / DAY</span>
+          <span class="val-hud" id="seasonOut">20</span>
+        </div>
+        <input type="range" id="seasonSlider" min="0" max="200" value="20" step="5"/>
+      </div>
+    </div>
+  </div>
+
+  <div id="results"></div>
+  <div class="chart-panel">
+    <p class="bk-header">XP SOURCE ANALYSIS</p>
+    <canvas id="bkChart"></canvas>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<script>
+const SRC=[
+  {k:'atkXP',  name:'Attacks',   color:'#00FFEA'},
+  {k:'bldXP',  name:'Builders',  color:'#FF00C8'},
+  {k:'donXP',  name:'Donations', color:'#00FF80'},
+  {k:'warXP',  name:'Wars',      color:'#FF6000'},
+  {k:'seasonXP',name:'Season',   color:'#FFE600'},
+];
+function xpForLevel(l){
+  if(l===1) return 30;
+  if(l<=200) return (l-1)*50;
+  if(l<=299) return (l-200)*500+9500;
+  return (l-300)*1000+60000;
+}
+function cumulXP(l){
+  if(l<=1) return 0;
+  if(l<=201) return (l-1)*(l-2)*25+30;
+  if(l<=299) return 250*Math.pow(l-200,2)+9250*(l-200)+985530;
+  return 500*Math.pow(l-300,2)+59500*(l-300)+4410530;
+}
+function totalXPNeeded(cur,pct,tgt){
+  const earned=Math.round(xpForLevel(cur)*pct/100);
+  return Math.max(0,cumulXP(tgt)-cumulXP(cur)-earned);
+}
+function calcDaily(){
+  const atk=+document.getElementById('atkSlider').value,stars=+document.getElementById('starsSlider').value,
+        don=+document.getElementById('donSlider').value,bld=+document.getElementById('bldSlider').value,
+        upg=+document.getElementById('upgSlider').value,war=+document.getElementById('warSlider').value,
+        ws=+document.getElementById('warStarsSlider').value,sea=+document.getElementById('seasonSlider').value;
+  return{atkXP:atk*(stars+1),donXP:Math.round(don*0.7),bldXP:Math.round(bld*Math.sqrt(upg*86400)/upg),warXP:Math.round((war/7)*(ws+1)*4),seasonXP:sea};
+}
+let chart=null;
+function update(){
+  const cur=Math.max(1,Math.min(499,+document.getElementById('curLvl').value||1));
+  const tgt=Math.max(cur+1,Math.min(500,+document.getElementById('tgtLvl').value||cur+1));
+  const pct=+document.getElementById('xpPct').value;
+  document.getElementById('xpPctOut').textContent=pct+'%';
+  document.getElementById('atkOut').textContent=document.getElementById('atkSlider').value;
+  document.getElementById('starsOut').textContent=document.getElementById('starsSlider').value;
+  document.getElementById('donOut').textContent=document.getElementById('donSlider').value;
+  document.getElementById('bldOut').textContent=document.getElementById('bldSlider').value;
+  document.getElementById('upgOut').textContent=document.getElementById('upgSlider').value+'d';
+  document.getElementById('warOut').textContent=document.getElementById('warSlider').value;
+  document.getElementById('warStarsOut').textContent=document.getElementById('warStarsSlider').value;
+  document.getElementById('seasonOut').textContent=document.getElementById('seasonSlider').value;
+  const needed=totalXPNeeded(cur,pct,tgt);
+  const d=calcDaily();const tot=SRC.reduce((s,x)=>s+d[x.k],0);
+  const days=tot>0?Math.ceil(needed/tot):Infinity;
+  const timeStr=days===Infinity?'∞':days<365?days+'d':(days/365).toFixed(1)+'y';
+  const timeSub=days===Infinity?'NO_DATA':days<7?days+' DAYS':days<30?(days/7).toFixed(1)+' WKS':days<365?(days/30).toFixed(1)+' MOS':(days/365).toFixed(1)+' YRS';
+  const xpNow=xpForLevel(cur);
+  const bkRows=SRC.map(s=>{const p=tot>0?Math.round(d[s.k]/tot*100):0;return`<div class="bk-row"><div class="bk-dot" style="background:${s.color};box-shadow:0 0 4px ${s.color}"></div><span class="bk-name">${s.name.toUpperCase()}</span><div class="bk-track"><div class="bk-fill" style="width:${p}%;background:${s.color};box-shadow:0 0 4px ${s.color}"></div></div><span class="bk-xp">${d[s.k]}</span><span class="bk-pct">${p}%</span></div>`;}).join('');
+  const warns=[tot===0?'// WARNING: ZERO DAILY XP CONFIGURED':'',days>365?'// WARNING: ETA &gt;365 DAYS':''].filter(Boolean).map(w=>`<div class="warn-box">${w}</div>`).join('');
+  document.getElementById('results').innerHTML=`
+    <div class="result-cards">
+      <div class="rcard"><div class="rcard-label">XP_NEEDED</div><div class="rcard-value">${needed>=1000?(needed/1000).toFixed(1)+'K':needed}</div><div class="rcard-sub">→ LVL ${tgt}</div></div>
+      <div class="rcard"><div class="rcard-label">DAILY_XP</div><div class="rcard-value">${tot}</div><div class="rcard-sub">CURRENT RATE</div></div>
+      <div class="rcard hot"><div class="rcard-label">ETA</div><div class="rcard-value">${timeStr}</div><div class="rcard-sub">${timeSub}</div></div>
+      <div class="rcard"><div class="rcard-label">LEVELS_ΔN</div><div class="rcard-value">${tgt-cur}</div><div class="rcard-sub">${cur} → ${tgt}</div></div>
+    </div>
+    <div class="progress-section">
+      <div class="prog-header"><span>// LEVEL ${cur} PROGRESS</span><span>${pct}% · ${Math.round(xpNow*pct/100).toLocaleString()} / ${xpNow.toLocaleString()} XP</span></div>
+      <div class="prog-track"><div class="prog-fill" style="width:${Math.min(100,pct)}%"></div></div>
+    </div>
+    <div class="breakdown-panel">
+      <p class="bk-header">DAILY BREAKDOWN</p>
+      ${bkRows}
+      <div style="text-align:right;font-size:10px;color:var(--text-dim);padding-top:8px;border-top:1px solid rgba(0,255,234,0.07);margin-top:6px;letter-spacing:0.1em;">TOTAL_XP/DAY: <span style="color:var(--cyan);text-shadow:0 0 8px var(--cyan)">${tot.toLocaleString()}</span></div>
+    </div>
+    ${warns}`;
+  if(chart)chart.destroy();
+  chart=new Chart(document.getElementById('bkChart'),{
+    type:'bar',
+    data:{labels:SRC.map(s=>s.name.toUpperCase()),datasets:[{data:SRC.map(s=>d[s.k]),backgroundColor:SRC.map(s=>s.color+'99'),borderColor:SRC.map(s=>s.color),borderWidth:1,borderRadius:3,borderSkipped:false}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{backgroundColor:'#0D1320',borderColor:'rgba(0,255,234,0.3)',borderWidth:1,titleColor:'#00FFEA',bodyColor:'#4A8080',callbacks:{label:c=>c.parsed.y+' XP/day'}}},scales:{x:{grid:{display:false},ticks:{color:'#4A8080',font:{size:10,family:"'Share Tech Mono',monospace"}}},y:{grid:{color:'rgba(0,255,234,0.05)'},ticks:{color:'#4A8080',font:{size:10,family:"'Share Tech Mono',monospace"},callback:v=>v+' XP'},border:{display:false}}}}
+  });
+}
+document.querySelectorAll('input').forEach(e=>e.addEventListener('input',update));
+update();
+</script>
+</body>
+</html>

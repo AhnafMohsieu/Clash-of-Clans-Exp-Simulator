@@ -1,0 +1,782 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CoC XP Calculation Tool</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+<style>
+/* ── THEME: SHADOW GOLD (default) ── */
+:root {
+  --gold: #c8941a;
+  --gold-bright: #e8b840;
+  --gold-dim: #8a6010;
+  --gold-glow: rgba(200,148,26,0.18);
+  --accent-rgb: 200,148,26;
+  --bg0: #0d0d0f;
+  --bg1: #141418;
+  --bg2: #1c1c22;
+  --bg3: #24242c;
+  --border: rgba(200,148,26,0.22);
+  --text-p: #e8e4d8;
+  --text-s: #8a8678;
+  --text-t: #54524a;
+  --zone1: #3a7c4e;
+  --zone2: #2a5c8e;
+  --zone3: #8e3a2a;
+}
+/* ── THEME: ARCANE BLUE ── */
+body.t-blue {
+  --gold: #5BA4FF;
+  --gold-bright: #89C0FF;
+  --gold-dim: #2D5FAA;
+  --gold-glow: rgba(91,164,255,0.18);
+  --accent-rgb: 91,164,255;
+  --border: rgba(91,164,255,0.22);
+}
+/* ── THEME: INFERNO RED ── */
+body.t-red {
+  --gold: #FF6B35;
+  --gold-bright: #FF9060;
+  --gold-dim: #AA3D1A;
+  --gold-glow: rgba(255,107,53,0.18);
+  --accent-rgb: 255,107,53;
+  --border: rgba(255,107,53,0.22);
+}
+
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg0);color:var(--text-p);font-family:'Rajdhani',sans-serif;font-size:15px;min-height:100vh}
+
+/* ── PAGE HEADER ── */
+.page-header{
+  text-align:center;padding:20px 14px 16px;
+  background:linear-gradient(180deg,rgba(var(--accent-rgb),0.07) 0%,transparent 100%);
+  border-bottom:1px solid var(--border);
+  position:relative;overflow:hidden;
+}
+.page-header::before{
+  content:'';position:absolute;inset:0;
+  background:radial-gradient(ellipse 80% 70% at 50% 0%,rgba(var(--accent-rgb),0.12) 0%,transparent 70%);
+  pointer-events:none;
+}
+.hdr-eyebrow{font-size:10px;font-weight:700;letter-spacing:.25em;text-transform:uppercase;color:var(--gold-dim);margin-bottom:6px;position:relative}
+.hdr-title{
+  font-size:clamp(18px,3.5vw,28px);font-weight:700;letter-spacing:.04em;position:relative;
+  background:linear-gradient(135deg,var(--gold-dim) 0%,var(--gold) 50%,var(--gold-bright) 100%);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+}
+.hdr-sub{font-size:11px;color:var(--text-t);margin-top:5px;letter-spacing:.04em;position:relative}
+.hdr-divider{width:120px;height:1px;background:linear-gradient(90deg,transparent,var(--gold),transparent);margin:12px auto 10px;position:relative}
+
+/* ── THEME PICKER ── */
+.theme-picker{display:flex;gap:8px;justify-content:center;position:relative}
+.tp-btn{
+  width:20px;height:20px;border-radius:50%;border:2px solid transparent;
+  cursor:pointer;transition:all .2s;padding:0;
+}
+.tp-btn:hover,.tp-btn.on{border-color:#fff;transform:scale(1.2);box-shadow:0 0 8px rgba(255,255,255,.3)}
+.tp-label{font-size:10px;color:var(--text-t);letter-spacing:.08em;text-transform:uppercase;margin-right:6px;line-height:20px}
+
+/* ── NAV TABS ── */
+.nav{display:flex;gap:2px;background:var(--bg1);border-bottom:1px solid var(--border);padding:0 12px}
+.nav-btn{
+  padding:10px 18px;font-family:'Rajdhani',sans-serif;font-size:13px;font-weight:600;
+  letter-spacing:.08em;text-transform:uppercase;background:none;border:none;color:var(--text-s);
+  cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-1px;
+  transition:color .15s,border-color .15s,text-shadow .2s;
+}
+.nav-btn:hover{color:var(--text-p)}
+.nav-btn.active{color:var(--gold);border-bottom-color:var(--gold);text-shadow:0 0 14px rgba(var(--accent-rgb),0.6)}
+
+/* ── PANELS ── */
+.panel{display:none;padding:14px 14px 32px}
+.panel.active{display:block}
+
+/* ── OVERVIEW ── */
+.stat-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:14px}
+.scard{
+  background:var(--bg2);border:1px solid var(--border);border-radius:6px;padding:12px 14px;
+  transition:border-color .2s,box-shadow .2s,transform .15s;cursor:default;
+}
+.scard:hover{
+  border-color:var(--gold);transform:translateY(-2px);
+  box-shadow:0 0 20px rgba(var(--accent-rgb),0.2),0 4px 12px rgba(0,0,0,.5);
+}
+.scard-lbl{font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--text-s);margin-bottom:5px}
+.scard-val{font-family:'Share Tech Mono',monospace;font-size:20px;color:var(--gold)}
+.scard-sub{font-size:11px;color:var(--text-t);margin-top:2px}
+
+.zone-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:14px}
+.zcard{border-radius:6px;padding:12px 14px;border-left:3px solid}
+.zcard.z1{background:rgba(58,124,78,.12);border-color:var(--zone1)}
+.zcard.z2{background:rgba(42,92,142,.12);border-color:var(--zone2)}
+.zcard.z3{background:rgba(142,58,42,.12);border-color:var(--zone3)}
+.zcard-title{font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;margin-bottom:6px}
+.zcard.z1 .zcard-title{color:#5fba80}
+.zcard.z2 .zcard-title{color:#5a9cd4}
+.zcard.z3 .zcard-title{color:#d46040}
+.zcard-row{font-size:12px;color:var(--text-s);margin-bottom:2px}
+.zcard-row span{color:var(--text-p);font-family:'Share Tech Mono',monospace}
+
+.formula-box{background:var(--bg2);border:1px solid var(--border);border-radius:6px;padding:12px 14px;font-size:12px;margin-bottom:14px}
+.formula-box h3{font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--gold-dim);margin-bottom:10px}
+.formula-row{display:grid;grid-template-columns:140px 1fr;gap:8px;align-items:center;margin-bottom:6px;padding-bottom:6px;border-bottom:1px solid rgba(255,255,255,.04)}
+.formula-row:last-child{border-bottom:none;margin-bottom:0;padding-bottom:0}
+.formula-range{font-size:11px;color:var(--text-s)}
+.formula-expr{font-family:'Share Tech Mono',monospace;font-size:12px;color:var(--text-p)}
+
+/* ── CHARTS ── */
+.chart-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px}
+.chart-card{background:var(--bg2);border:1px solid var(--border);border-radius:6px;padding:12px 14px}
+.chart-card.full{grid-column:1/-1}
+.chart-hd{font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--gold-dim);margin-bottom:10px;display:flex;justify-content:space-between;align-items:center}
+.chart-hd-note{font-size:10px;color:var(--text-t);text-transform:none;letter-spacing:0;font-weight:400}
+.chart-wrap{position:relative}
+.legend{display:flex;gap:14px;margin-top:8px;flex-wrap:wrap}
+.leg-item{display:flex;align-items:center;gap:5px;font-size:11px;color:var(--text-s)}
+.leg-dot{width:8px;height:8px;border-radius:2px;flex-shrink:0}
+
+/* ── TABLE ── */
+.tbl-controls{display:flex;gap:10px;align-items:center;margin-bottom:10px;flex-wrap:wrap}
+.tbl-search{background:var(--bg2);border:1px solid var(--border);border-radius:4px;padding:6px 10px;color:var(--text-p);font-family:'Rajdhani',sans-serif;font-size:13px;width:160px}
+.tbl-search:focus{outline:none;border-color:var(--gold-dim)}
+.zone-filter{display:flex;gap:4px}
+.zf-btn{padding:4px 10px;font-family:'Rajdhani',sans-serif;font-size:11px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;border-radius:4px;border:1px solid;cursor:pointer;transition:all .15s}
+.zf-btn.all{border-color:var(--border);background:var(--bg3);color:var(--text-s)}
+.zf-btn.all.on{border-color:var(--gold);background:var(--gold-glow);color:var(--gold)}
+.zf-btn.z1f{border-color:rgba(58,124,78,.4);background:rgba(58,124,78,.08);color:#5fba80}
+.zf-btn.z1f.on{background:rgba(58,124,78,.25)}
+.zf-btn.z2f{border-color:rgba(42,92,142,.4);background:rgba(42,92,142,.08);color:#5a9cd4}
+.zf-btn.z2f.on{background:rgba(42,92,142,.25)}
+.zf-btn.z3f{border-color:rgba(142,58,42,.4);background:rgba(142,58,42,.08);color:#d46040}
+.zf-btn.z3f.on{background:rgba(142,58,42,.25)}
+.tbl-wrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:13px}
+thead th{background:var(--bg3);padding:8px 10px;text-align:right;font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--text-s);border-bottom:1px solid var(--border);white-space:nowrap;cursor:pointer;user-select:none}
+thead th:first-child{text-align:center}
+thead th:hover{color:var(--text-p)}
+thead th.sort-asc::after{content:' ↑';color:var(--gold)}
+thead th.sort-desc::after{content:' ↓';color:var(--gold)}
+tbody tr{border-bottom:1px solid rgba(255,255,255,.03);transition:background .1s}
+tbody tr:hover{background:var(--bg3)}
+tbody td{padding:7px 10px;text-align:right;font-family:'Share Tech Mono',monospace;font-size:12px;color:var(--text-s)}
+tbody td:first-child{text-align:center;color:var(--text-p);font-weight:600;font-size:13px}
+.tbl-footer{display:flex;justify-content:space-between;align-items:center;margin-top:10px;font-size:12px;color:var(--text-s)}
+.pg-btns{display:flex;gap:4px}
+.pg-btn{padding:4px 10px;background:var(--bg3);border:1px solid var(--border);border-radius:4px;color:var(--text-s);cursor:pointer;font-family:'Rajdhani',sans-serif;font-size:12px}
+.pg-btn:hover{color:var(--text-p);border-color:var(--gold-dim)}
+.pg-btn.on{background:var(--gold-glow);border-color:var(--gold);color:var(--gold)}
+
+/* ── DONATION SIM ── */
+.sim-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px}
+.sim-card{background:var(--bg2);border:1px solid var(--border);border-radius:6px;padding:14px}
+.sim-hd{font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--gold-dim);margin-bottom:12px}
+.sim-field{margin-bottom:10px}
+.sim-field label{display:block;font-size:12px;color:var(--text-s);margin-bottom:4px}
+.sim-field input[type=number]{width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:4px;padding:6px 10px;color:var(--text-p);font-family:'Share Tech Mono',monospace;font-size:13px}
+.sim-field input:focus{outline:none;border-color:var(--gold-dim)}
+.xp-hint{font-size:11px;color:var(--text-t);margin-top:2px}
+.pbar-row{display:flex;justify-content:space-between;font-size:11px;color:var(--text-s);margin-bottom:5px;margin-top:10px}
+.pbar-track{height:7px;background:var(--bg0);border-radius:4px;overflow:hidden;border:1px solid rgba(255,255,255,.04)}
+.pbar-fill{height:100%;background:linear-gradient(90deg,var(--gold-dim),var(--gold),var(--gold-bright));border-radius:4px;transition:width .3s ease}
+
+.don-list{display:flex;flex-direction:column;gap:8px}
+.don-item{
+  background:var(--bg3);border:1px solid rgba(255,255,255,.06);border-radius:6px;padding:12px;
+  transition:border-color .2s,box-shadow .2s;
+}
+.don-item:hover{
+  border-color:rgba(var(--accent-rgb),0.35);
+  box-shadow:0 0 14px rgba(var(--accent-rgb),0.12);
+}
+.don-top{display:grid;grid-template-columns:32px 1fr auto;align-items:center;gap:10px;margin-bottom:8px}
+.don-icon{
+  width:32px;height:32px;border-radius:50%;display:flex;align-items:center;
+  justify-content:center;font-size:15px;flex-shrink:0;transition:box-shadow .2s;
+}
+.don-item:hover .don-icon{box-shadow:0 0 14px rgba(var(--accent-rgb),0.5)}
+.don-name{font-size:13px;font-weight:600;color:var(--text-p)}
+.don-rate{font-size:11px;color:var(--text-t);margin-top:1px}
+.don-xp-n{font-family:'Share Tech Mono',monospace;font-size:20px;color:var(--gold);text-align:right;line-height:1}
+.don-xp-u{font-size:10px;color:var(--text-t);text-align:right}
+.don-ctrl{display:flex;align-items:center;gap:8px}
+.don-ctrl input[type=range]{flex:1;min-width:0;cursor:pointer;accent-color:var(--gold)}
+.don-num{
+  width:90px;flex-shrink:0;background:var(--bg2);border:1px solid var(--border);
+  border-radius:4px;padding:4px 7px;color:var(--text-p);font-family:'Share Tech Mono',monospace;
+  font-size:12px;text-align:right;
+}
+.don-num:focus{outline:none;border-color:var(--gold-dim)}
+.don-unit{font-size:11px;color:var(--text-t);white-space:nowrap}
+
+.total-bar{
+  display:flex;justify-content:space-between;align-items:center;
+  background:var(--bg0);border:1px solid var(--border);border-radius:6px;
+  padding:10px 14px;margin-top:10px;
+  transition:box-shadow .3s;
+  animation:total-pulse 4s ease-in-out infinite;
+}
+@keyframes total-pulse{0%,100%{box-shadow:0 0 6px rgba(var(--accent-rgb),0.08)}50%{box-shadow:0 0 18px rgba(var(--accent-rgb),0.22)}}
+.total-lbl{font-size:12px;color:var(--text-s)}
+.total-val{font-family:'Share Tech Mono',monospace;font-size:17px;color:var(--gold)}
+
+.res-stat-row{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:12px}
+.res-stat{background:var(--bg3);border:1px solid rgba(255,255,255,.06);border-radius:6px;padding:10px 12px}
+.rs-lbl{font-size:11px;color:var(--text-s);margin-bottom:3px}
+.rs-val{font-family:'Share Tech Mono',monospace;font-size:17px;color:var(--text-p)}
+.rs-sub{font-size:11px;color:var(--text-t);margin-top:2px}
+
+.res-tbl{width:100%;border-collapse:collapse;font-size:12px}
+.res-tbl th{font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--text-t);text-align:left;padding:0 8px 7px 0;border-bottom:1px solid rgba(255,255,255,.06)}
+.res-tbl th:last-child{text-align:right;padding-right:0}
+.res-tbl td{padding:6px 8px 6px 0;border-bottom:1px solid rgba(255,255,255,.03);color:var(--text-s);font-family:'Share Tech Mono',monospace}
+.res-tbl td:first-child{color:var(--text-p);font-family:'Rajdhani',sans-serif;font-weight:600;font-size:13px}
+.res-tbl td:last-child{text-align:right;padding-right:0}
+.res-tbl tr:last-child td{border-bottom:none}
+.res-tbl .tgt-row td{color:var(--gold)}
+.empty-msg{font-size:13px;color:var(--text-t);text-align:center;padding:24px 0}
+.tip-row{display:flex;gap:8px;align-items:flex-start;background:var(--bg3);border-radius:5px;padding:10px 12px;margin-top:10px;font-size:12px;color:var(--text-s);line-height:1.55}
+.tip-row strong{color:var(--text-p)}
+</style>
+</head>
+<body>
+
+<!-- PAGE HEADER -->
+<div class="page-header">
+  <div class="hdr-eyebrow">⚔️ Clash of Clans</div>
+  <div class="hdr-title">XP Calculation Tool</div>
+  <div class="hdr-sub">Level formulas · Charts · Level table · Donation simulator</div>
+  <div class="hdr-divider"></div>
+  <div class="theme-picker">
+    <span class="tp-label">Theme</span>
+    <button class="tp-btn on" title="Shadow Gold"
+      style="background:linear-gradient(135deg,#8a6010,#c8941a)"
+      onclick="setTheme('',this)"></button>
+    <button class="tp-btn" title="Arcane Blue"
+      style="background:linear-gradient(135deg,#2D5FAA,#5BA4FF)"
+      onclick="setTheme('t-blue',this)"></button>
+    <button class="tp-btn" title="Inferno Red"
+      style="background:linear-gradient(135deg,#AA3D1A,#FF6B35)"
+      onclick="setTheme('t-red',this)"></button>
+  </div>
+</div>
+
+<!-- NAV TABS -->
+<div class="nav">
+  <button class="nav-btn active" onclick="showTab('overview')">Overview</button>
+  <button class="nav-btn" onclick="showTab('charts')">Charts</button>
+  <button class="nav-btn" onclick="showTab('table')">Level Table</button>
+  <button class="nav-btn" onclick="showTab('sim')">Donation Sim</button>
+</div>
+
+<!-- OVERVIEW -->
+<div class="panel active" id="tab-overview">
+  <div class="stat-grid" id="statGrid"></div>
+  <div class="zone-grid">
+    <div class="zcard z1">
+      <div class="zcard-title">Zone 1 · Levels 1–200</div>
+      <div class="zcard-row">Formula <span>(lvl−1)×50</span></div>
+      <div class="zcard-row">Exception <span>L1→L2 = 30 XP</span></div>
+      <div class="zcard-row">XP range <span>30 → 9,950</span></div>
+      <div class="zcard-row">Increase <span>+50 XP/level</span></div>
+      <div class="zcard-row">Zone total <span id="z1total">—</span></div>
+    </div>
+    <div class="zcard z2">
+      <div class="zcard-title">Zone 2 · Levels 201–299</div>
+      <div class="zcard-row">Formula <span>(lvl−200)×500+9500</span></div>
+      <div class="zcard-row">XP range <span>10,000 → 59,000</span></div>
+      <div class="zcard-row">Increase <span>+500 XP/level</span></div>
+      <div class="zcard-row">Zone total <span id="z2total">—</span></div>
+    </div>
+    <div class="zcard z3">
+      <div class="zcard-title">Zone 3 · Levels 300–499</div>
+      <div class="zcard-row">Formula <span>(lvl−300)×1000+60000</span></div>
+      <div class="zcard-row">XP range <span>60,000 → 259,000</span></div>
+      <div class="zcard-row">Increase <span>+1,000 XP/level</span></div>
+      <div class="zcard-row">Zone total <span id="z3total">—</span></div>
+    </div>
+  </div>
+  <div class="formula-box">
+    <h3>Piecewise formulas (verified from wiki)</h3>
+    <div class="formula-row"><div class="formula-range">Level 1</div><div class="formula-expr">XP = 30</div></div>
+    <div class="formula-row"><div class="formula-range">Levels 2 – 200</div><div class="formula-expr">XP = (lvl − 1) × 50</div></div>
+    <div class="formula-row"><div class="formula-range">Levels 201 – 299</div><div class="formula-expr">XP = (lvl − 200) × 500 + 9,500</div></div>
+    <div class="formula-row"><div class="formula-range">Levels 300 – 499</div><div class="formula-expr">XP = (lvl − 300) × 1,000 + 60,000</div></div>
+    <div class="formula-row"><div class="formula-range">Cumulative ≤201</div><div class="formula-expr">XP = (lvl−1)×(lvl−2)×25 + 30</div></div>
+    <div class="formula-row"><div class="formula-range">Cumulative 202–299</div><div class="formula-expr">XP = 250×(lvl−200)² + 9250×(lvl−200) + 985,530</div></div>
+    <div class="formula-row"><div class="formula-range">Cumulative ≥300</div><div class="formula-expr">XP = 500×(lvl−300)² + 59500×(lvl−300) + 4,410,530</div></div>
+  </div>
+  <div class="chart-card">
+    <div class="chart-hd">XP Cost Per Level — All 500 <span class="chart-hd-note">log scale · zone-colored</span></div>
+    <div class="chart-wrap" style="height:200px"><canvas id="ovChart"></canvas></div>
+    <div class="legend">
+      <div class="leg-item"><div class="leg-dot" style="background:#5fba80"></div>Zone 1 (1–200)</div>
+      <div class="leg-item"><div class="leg-dot" style="background:#5a9cd4"></div>Zone 2 (201–299)</div>
+      <div class="leg-item"><div class="leg-dot" style="background:#d46040"></div>Zone 3 (300–499)</div>
+    </div>
+  </div>
+</div>
+
+<!-- CHARTS -->
+<div class="panel" id="tab-charts">
+  <div class="chart-grid">
+    <div class="chart-card">
+      <div class="chart-hd">XP per level <span class="chart-hd-note">cost to advance one level</span></div>
+      <div class="chart-wrap" style="height:220px"><canvas id="ch1"></canvas></div>
+    </div>
+    <div class="chart-card">
+      <div class="chart-hd">Cumulative XP <span class="chart-hd-note">total XP to reach each level</span></div>
+      <div class="chart-wrap" style="height:220px"><canvas id="ch2"></canvas></div>
+    </div>
+    <div class="chart-card">
+      <div class="chart-hd">XP increase per level <span class="chart-hd-note">+XP vs previous level</span></div>
+      <div class="chart-wrap" style="height:220px"><canvas id="ch3"></canvas></div>
+    </div>
+    <div class="chart-card">
+      <div class="chart-hd">Zone comparison <span class="chart-hd-note">total XP required per zone</span></div>
+      <div class="chart-wrap" style="height:220px"><canvas id="ch4"></canvas></div>
+    </div>
+    <div class="chart-card full">
+      <div class="chart-hd">XP per level — full range detail <span class="chart-hd-note">all 499 level transitions · zone bands</span></div>
+      <div class="chart-wrap" style="height:250px"><canvas id="ch5"></canvas></div>
+    </div>
+  </div>
+</div>
+
+<!-- TABLE -->
+<div class="panel" id="tab-table">
+  <div class="tbl-controls">
+    <input class="tbl-search" id="tblSearch" type="number" min="1" max="500" placeholder="Jump to level…">
+    <div class="zone-filter">
+      <button class="zf-btn all on" onclick="setZone('all')">All</button>
+      <button class="zf-btn z1f" onclick="setZone(1)">Zone 1</button>
+      <button class="zf-btn z2f" onclick="setZone(2)">Zone 2</button>
+      <button class="zf-btn z3f" onclick="setZone(3)">Zone 3</button>
+    </div>
+    <span id="tblCount" style="font-size:12px;color:var(--text-t);margin-left:auto"></span>
+  </div>
+  <div class="tbl-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th onclick="sortTbl('lvl')">Level</th>
+          <th onclick="sortTbl('xpPerLvl')">XP to next level</th>
+          <th onclick="sortTbl('cumul')">Cumulative XP</th>
+          <th onclick="sortTbl('increase')">Increase vs prev</th>
+          <th onclick="sortTbl('pct')">% of L500 total</th>
+          <th>Formula zone</th>
+        </tr>
+      </thead>
+      <tbody id="tblBody"></tbody>
+    </table>
+  </div>
+  <div class="tbl-footer">
+    <span id="tblInfo"></span>
+    <div class="pg-btns" id="pgBtns"></div>
+  </div>
+</div>
+
+<!-- DONATION SIM -->
+<div class="panel" id="tab-sim">
+  <div class="sim-grid">
+
+    <!-- Profile -->
+    <div class="sim-card">
+      <p class="sim-hd">Your profile</p>
+      <div class="sim-field">
+        <label>Current level</label>
+        <input type="number" id="curLvl" min="1" max="499" value="50">
+      </div>
+      <div class="sim-field">
+        <label>XP earned in current level</label>
+        <input type="number" id="curXP" min="0" value="0">
+        <p class="xp-hint" id="xpHint">Max: 2,449 XP</p>
+      </div>
+      <div class="sim-field">
+        <label>Target level</label>
+        <input type="number" id="tgtLvl" min="2" max="500" value="60">
+      </div>
+      <div class="pbar-row">
+        <span id="pbarLeft">Level 50 progress</span>
+        <span id="pbarRight">0 / 2,450 XP (0%)</span>
+      </div>
+      <div class="pbar-track"><div class="pbar-fill" id="pbarFill" style="width:0%"></div></div>
+    </div>
+
+    <!-- Donations -->
+    <div class="sim-card">
+      <p class="sim-hd">Daily donations</p>
+      <div class="don-list">
+
+        <!-- Regular troops — slider 0-200, value 0-100,000 (quadratic) -->
+        <div class="don-item">
+          <div class="don-top">
+            <div class="don-icon" style="background:rgba(200,148,26,.15)">⚔️</div>
+            <div>
+              <div class="don-name">Regular troops</div>
+              <div class="don-rate">1 XP / housing space · max 100,000</div>
+            </div>
+            <div>
+              <div class="don-xp-n" id="xT">0</div>
+              <div class="don-xp-u">XP/day</div>
+            </div>
+          </div>
+          <div class="don-ctrl">
+            <input type="range" id="rT" min="0" max="200" step="1" value="0">
+            <input type="number" id="nT" class="don-num" min="0" max="100000" value="0">
+            <span class="don-unit">spaces</span>
+          </div>
+        </div>
+
+        <!-- Spells — slider 0-200, value 0-10,000 (quadratic) -->
+        <div class="don-item">
+          <div class="don-top">
+            <div class="don-icon" style="background:rgba(90,156,212,.15)">🌀</div>
+            <div>
+              <div class="don-name">Spells</div>
+              <div class="don-rate">5 XP / housing space · max 10,000</div>
+            </div>
+            <div>
+              <div class="don-xp-n" id="xS">0</div>
+              <div class="don-xp-u">XP/day</div>
+            </div>
+          </div>
+          <div class="don-ctrl">
+            <input type="range" id="rS" min="0" max="200" step="1" value="0">
+            <input type="number" id="nS" class="don-num" min="0" max="10000" value="0">
+            <span class="don-unit">spaces</span>
+          </div>
+        </div>
+
+        <!-- Siege machines — slider 0-200, value 0-1,000 (quadratic) -->
+        <div class="don-item">
+          <div class="don-top">
+            <div class="don-icon" style="background:rgba(95,186,128,.15)">🏰</div>
+            <div>
+              <div class="don-name">Siege machines</div>
+              <div class="don-rate">30 XP / machine · max 1,000</div>
+            </div>
+            <div>
+              <div class="don-xp-n" id="xSG">0</div>
+              <div class="don-xp-u">XP/day</div>
+            </div>
+          </div>
+          <div class="don-ctrl">
+            <input type="range" id="rSG" min="0" max="200" step="1" value="0">
+            <input type="number" id="nSG" class="don-num" min="0" max="1000" value="0">
+            <span class="don-unit">machines</span>
+          </div>
+        </div>
+
+      </div>
+      <div class="total-bar">
+        <span class="total-lbl">Total daily XP</span>
+        <span class="total-val" id="totalXP">0 XP / day</span>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Results -->
+  <div class="sim-card">
+    <p class="sim-hd">Results</p>
+    <div id="resultsInner"><p class="empty-msg">Set donation values above to see projection.</p></div>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<script>
+/* ══ THEME ══ */
+function setTheme(cls, btn) {
+  document.body.className = cls;
+  document.querySelectorAll('.tp-btn').forEach(b => b.classList.remove('on'));
+  btn.classList.add('on');
+}
+
+/* ══ FORMULAS ══ */
+function xpPerLevel(l) {
+  if (l === 1) return 30;
+  if (l <= 200) return (l - 1) * 50;
+  if (l <= 299) return (l - 200) * 500 + 9500;
+  return (l - 300) * 1000 + 60000;
+}
+function cumulXP(l) {
+  if (l <= 1) return 0;
+  if (l <= 201) return (l - 1) * (l - 2) * 25 + 30;
+  if (l <= 299) return 250 * Math.pow(l - 200, 2) + 9250 * (l - 200) + 985530;
+  return 500 * Math.pow(l - 300, 2) + 59500 * (l - 300) + 4410530;
+}
+function xpNeeded(cur, earned, tgt) { return Math.max(0, cumulXP(tgt) - cumulXP(cur) - earned); }
+function zoneOf(l) { return l <= 200 ? 1 : l <= 299 ? 2 : 3; }
+const ZONE_COL = ['', '#5fba80', '#5a9cd4', '#d46040'];
+const ZONE_BG  = ['', 'rgba(58,124,78,.18)', 'rgba(42,92,142,.18)', 'rgba(142,58,42,.18)'];
+
+/* ══ PRE-COMPUTE ══ */
+const ROWS = [];
+const totalXP_all = cumulXP(500);
+for (let l = 1; l <= 500; l++) {
+  const xpl  = l <= 499 ? xpPerLevel(l) : 0;
+  const cum  = cumulXP(l);
+  const prev = l > 1 ? xpPerLevel(l - 1) : 0;
+  const inc  = l <= 1 ? 0 : xpPerLevel(l) - prev;
+  ROWS.push({ lvl: l, xpPerLvl: xpl, cumul: cum, increase: inc, pct: (cum / totalXP_all * 100), zone: zoneOf(l) });
+}
+const fmt    = n => Math.round(n).toLocaleString();
+const fmtPct = n => n.toFixed(3) + '%';
+
+/* ══ TABS ══ */
+function showTab(id) {
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('tab-' + id).classList.add('active');
+  const labels = { overview: 0, charts: 1, table: 2, sim: 3 };
+  document.querySelectorAll('.nav-btn')[labels[id]].classList.add('active');
+  if (id === 'charts') initCharts();
+  if (id === 'table')  renderTable();
+}
+
+/* ══ OVERVIEW ══ */
+function buildOverview() {
+  const sg = document.getElementById('statGrid');
+  const stats = [
+    { l: 'Total levels',       v: '500',                   s: 'Level 1 → Level 500' },
+    { l: 'Total XP (L1→500)', v: fmt(totalXP_all),        s: 'All zones combined' },
+    { l: 'Min XP per level',   v: '30 XP',                 s: 'Level 1 → 2' },
+    { l: 'Max XP per level',   v: fmt(xpPerLevel(499)) + ' XP', s: 'Level 499 → 500' },
+    { l: 'Zone 1 levels',      v: '200',                   s: 'Levels 1–200' },
+    { l: 'Zone 2 levels',      v: '99',                    s: 'Levels 201–299' },
+    { l: 'Zone 3 levels',      v: '200',                   s: 'Levels 300–499' },
+    { l: 'XP at L100',         v: fmt(cumulXP(100)),       s: 'Cumulative' },
+    { l: 'XP at L200',         v: fmt(cumulXP(200)),       s: 'Cumulative' },
+    { l: 'XP at L300',         v: fmt(cumulXP(300)),       s: 'Cumulative' },
+    { l: 'XP at L400',         v: fmt(cumulXP(400)),       s: 'Cumulative' },
+    { l: 'XP at L500',         v: fmt(cumulXP(500)),       s: 'Cumulative' },
+  ];
+  sg.innerHTML = stats.map(s =>
+    `<div class="scard"><div class="scard-lbl">${s.l}</div><div class="scard-val">${s.v}</div><div class="scard-sub">${s.s}</div></div>`
+  ).join('');
+
+  let z1 = 0, z2 = 0, z3 = 0;
+  for (let l = 1; l <= 499; l++) {
+    const x = xpPerLevel(l);
+    if (l <= 200) z1 += x; else if (l <= 299) z2 += x; else z3 += x;
+  }
+  document.getElementById('z1total').textContent = fmt(z1) + ' XP';
+  document.getElementById('z2total').textContent = fmt(z2) + ' XP';
+  document.getElementById('z3total').textContent = fmt(z3) + ' XP';
+
+  const labels = [], data = [], colors = [];
+  for (let l = 1; l <= 499; l++) { labels.push(l); data.push(xpPerLevel(l)); colors.push(ZONE_COL[zoneOf(l)]); }
+  new Chart(document.getElementById('ovChart'), {
+    type: 'bar',
+    data: { labels, datasets: [{ data, backgroundColor: colors, borderWidth: 0 }] },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: false }, tooltip: { callbacks: { label: c => 'L' + c.label + '→' + (+c.label + 1) + ': ' + fmt(c.parsed.y) + ' XP' } } },
+      scales: {
+        x: { display: false },
+        y: { type: 'logarithmic', grid: { color: 'rgba(255,255,255,.04)' }, ticks: { color: '#54524a', font: { size: 10 }, callback: v => v >= 1000 ? Math.round(v / 1000) + 'k' : v } }
+      }
+    }
+  });
+}
+
+/* ══ CHARTS ══ */
+let chartsInited = false;
+function initCharts() {
+  if (chartsInited) return; chartsInited = true;
+  const gc = 'rgba(255,255,255,.05)', tc = '#54524a';
+  const dfOpts = {
+    responsive: true, maintainAspectRatio: false,
+    plugins: { legend: { display: false } },
+    scales: {
+      x: { grid: { color: gc }, ticks: { color: tc, font: { size: 9 }, maxTicksLimit: 10 } },
+      y: { grid: { color: gc }, ticks: { color: tc, font: { size: 10 } } }
+    }
+  };
+
+  const l1 = [], d1 = [], c1 = [];
+  for (let l = 1; l <= 499; l++) { l1.push(l); d1.push(xpPerLevel(l)); c1.push(ZONE_COL[zoneOf(l)]); }
+  new Chart(document.getElementById('ch1'), { type: 'bar', data: { labels: l1, datasets: [{ data: d1, backgroundColor: c1, borderWidth: 0 }] }, options: { ...dfOpts, plugins: { legend: { display: false }, tooltip: { callbacks: { label: c => 'XP: ' + fmt(c.parsed.y) } } }, scales: { x: { ...dfOpts.scales.x, ticks: { color: tc, font: { size: 9 }, maxTicksLimit: 8 } }, y: { ...dfOpts.scales.y, ticks: { color: tc, font: { size: 10 }, callback: v => v >= 1000 ? Math.round(v / 1000) + 'k' : v } } } } });
+
+  const l2 = [], d2 = [];
+  for (let l = 1; l <= 500; l++) { l2.push(l); d2.push(cumulXP(l)); }
+  new Chart(document.getElementById('ch2'), { type: 'line', data: { labels: l2, datasets: [{ data: d2, borderColor: '#c8941a', borderWidth: 1.5, backgroundColor: 'rgba(200,148,26,.08)', fill: true, pointRadius: 0, tension: 0.1 }] }, options: { ...dfOpts, plugins: { legend: { display: false }, tooltip: { callbacks: { label: c => 'Cumul: ' + fmt(c.parsed.y) + ' XP' } } }, scales: { x: { ...dfOpts.scales.x, ticks: { color: tc, font: { size: 9 }, maxTicksLimit: 8 } }, y: { ...dfOpts.scales.y, ticks: { color: tc, font: { size: 10 }, callback: v => v >= 1e6 ? (v / 1e6).toFixed(1) + 'M' : v >= 1000 ? (v / 1000).toFixed(0) + 'k' : v } } } } });
+
+  const l3 = [], d3 = [], c3 = [];
+  for (let l = 2; l <= 499; l++) { l3.push(l); d3.push(xpPerLevel(l) - xpPerLevel(l - 1)); c3.push(ZONE_COL[zoneOf(l)]); }
+  new Chart(document.getElementById('ch3'), { type: 'bar', data: { labels: l3, datasets: [{ data: d3, backgroundColor: c3, borderWidth: 0 }] }, options: { ...dfOpts, plugins: { legend: { display: false }, tooltip: { callbacks: { label: c => '+' + fmt(c.parsed.y) + ' XP vs prev' } } }, scales: { x: { ...dfOpts.scales.x, ticks: { color: tc, font: { size: 9 }, maxTicksLimit: 8 } }, y: { ...dfOpts.scales.y, ticks: { color: tc, font: { size: 10 } } } } } });
+
+  let z1 = 0, z2 = 0, z3 = 0;
+  for (let l = 1; l <= 499; l++) { const x = xpPerLevel(l); if (l <= 200) z1 += x; else if (l <= 299) z2 += x; else z3 += x; }
+  new Chart(document.getElementById('ch4'), { type: 'doughnut', data: { labels: ['Zone 1 (1–200)', 'Zone 2 (201–299)', 'Zone 3 (300–499)'], datasets: [{ data: [z1, z2, z3], backgroundColor: ['#5fba80', '#5a9cd4', '#d46040'], borderWidth: 0 }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: { color: '#8a8678', font: { size: 11 }, boxWidth: 10, padding: 10 } }, tooltip: { callbacks: { label: c => c.label + ': ' + fmt(c.raw) + ' XP (' + ((c.raw / totalXP_all) * 100).toFixed(1) + '%)' } } }, cutout: '60%' } });
+
+  const l5 = [], d5 = [], c5 = [];
+  for (let l = 1; l <= 499; l++) { l5.push(l); d5.push(xpPerLevel(l)); c5.push(ZONE_COL[zoneOf(l)]); }
+  new Chart(document.getElementById('ch5'), { type: 'bar', data: { labels: l5, datasets: [{ data: d5, backgroundColor: c5, borderWidth: 0 }] }, options: { ...dfOpts, plugins: { legend: { display: false }, tooltip: { callbacks: { label: c => 'L' + c.label + '→' + (+c.label + 1) + ': ' + fmt(c.parsed.y) + ' XP' } } }, scales: { x: { ...dfOpts.scales.x, ticks: { color: tc, font: { size: 9 }, maxTicksLimit: 12 } }, y: { ...dfOpts.scales.y, ticks: { color: tc, font: { size: 10 }, callback: v => v >= 1000 ? Math.round(v / 1000) + 'k' : v } } } } });
+}
+
+/* ══ TABLE ══ */
+let tblZone = 'all', tblSort = 'lvl', tblDir = 1, tblPage = 1;
+const PAGE = 25;
+
+function setZone(z) {
+  tblZone = z; tblPage = 1;
+  document.querySelectorAll('.zf-btn').forEach(b => b.classList.remove('on'));
+  if (z === 'all') document.querySelector('.zf-btn.all').classList.add('on');
+  else document.querySelector('.zf-btn.z' + z + 'f').classList.add('on');
+  renderTable();
+}
+function sortTbl(col) {
+  if (tblSort === col) tblDir *= -1; else { tblSort = col; tblDir = 1; }
+  tblPage = 1; renderTable();
+}
+function renderTable() {
+  let rows = [...ROWS];
+  if (tblZone !== 'all') rows = rows.filter(r => r.zone === tblZone);
+  const search = document.getElementById('tblSearch').value;
+  if (search) {
+    const n = parseInt(search);
+    if (!isNaN(n)) { const idx = rows.findIndex(r => r.lvl === n); if (idx >= 0) tblPage = Math.floor(idx / PAGE) + 1; }
+  }
+  rows.sort((a, b) => tblDir * (a[tblSort] - b[tblSort]));
+  const total = rows.length;
+  document.getElementById('tblCount').textContent = total + ' levels';
+  document.getElementById('tblInfo').textContent = 'Showing ' + (Math.min((tblPage - 1) * PAGE + 1, total)) + '–' + Math.min(tblPage * PAGE, total) + ' of ' + total;
+  const slice = rows.slice((tblPage - 1) * PAGE, tblPage * PAGE);
+  const ZONE_LABEL = ['', 'Zone 1', 'Zone 2', 'Zone 3'];
+  document.getElementById('tblBody').innerHTML = slice.map(r => `
+    <tr>
+      <td>${r.lvl}</td>
+      <td style="color:${ZONE_COL[r.zone]}">${r.lvl <= 499 ? fmt(r.xpPerLvl) : '-'}</td>
+      <td>${fmt(r.cumul)}</td>
+      <td>${r.increase >= 0 ? '+' : '-'}${fmt(Math.abs(r.increase))}</td>
+      <td style="color:var(--text-t)">${fmtPct(r.pct)}</td>
+      <td><span style="display:inline-block;padding:2px 8px;border-radius:3px;font-size:10px;font-weight:700;letter-spacing:.05em;background:${ZONE_BG[r.zone]};color:${ZONE_COL[r.zone]}">${ZONE_LABEL[r.zone]}</span></td>
+    </tr>`).join('');
+  const totalPages = Math.ceil(total / PAGE);
+  const pb = document.getElementById('pgBtns');
+  let html = '';
+  const mkBtn = (p, label) => `<button class="pg-btn${p === tblPage ? ' on' : ''}" onclick="gotoPage(${p})">${label || p}</button>`;
+  if (totalPages <= 7) { for (let p = 1; p <= totalPages; p++) html += mkBtn(p); }
+  else {
+    html += mkBtn(1);
+    if (tblPage > 3) html += '<span style="color:var(--text-t);padding:0 4px">…</span>';
+    for (let p = Math.max(2, tblPage - 1); p <= Math.min(totalPages - 1, tblPage + 1); p++) html += mkBtn(p);
+    if (tblPage < totalPages - 2) html += '<span style="color:var(--text-t);padding:0 4px">…</span>';
+    html += mkBtn(totalPages);
+  }
+  pb.innerHTML = html;
+  document.querySelectorAll('thead th').forEach(th => th.classList.remove('sort-asc', 'sort-desc'));
+  const cols = ['lvl', 'xpPerLvl', 'cumul', 'increase', 'pct'];
+  const thIdx = cols.indexOf(tblSort);
+  if (thIdx >= 0) { const ths = document.querySelectorAll('thead th'); if (ths[thIdx]) ths[thIdx].classList.add(tblDir === 1 ? 'sort-asc' : 'sort-desc'); }
+}
+function gotoPage(p) { tblPage = p; renderTable(); }
+document.getElementById('tblSearch').addEventListener('input', () => { tblPage = 1; renderTable(); });
+
+/* ══ DONATION SIM ══
+   Quadratic mapping: slider pos 0–200 ↔ actual value 0–max
+   posToVal(200, 100000) = 100000 ✓
+   posToVal(200, 10000)  = 10000  ✓
+   posToVal(200, 1000)   = 1000   ✓
+*/
+const DON = [
+  { r: 'rT',  n: 'nT',  max: 100000, x: 'xT',  rate: 1  },
+  { r: 'rS',  n: 'nS',  max: 10000,  x: 'xS',  rate: 5  },
+  { r: 'rSG', n: 'nSG', max: 1000,   x: 'xSG', rate: 30 },
+];
+function posToVal(p, max) { return p <= 0 ? 0 : Math.round(max * Math.pow(p / 200, 2)); }
+function valToPos(v, max) { return (!v || v <= 0) ? 0 : Math.round(Math.sqrt(Math.min(v, max) / max) * 200); }
+const $ = id => document.getElementById(id);
+
+function fmtTime(d) {
+  if (!isFinite(d) || d <= 0) return '<1 day';
+  if (d < 2)   return '1 day';
+  if (d < 7)   return Math.round(d) + ' days';
+  if (d < 30)  return (d / 7).toFixed(1) + ' wks';
+  if (d < 365) return (d / 30).toFixed(1) + ' mo';
+  return (d / 365).toFixed(1) + ' yrs';
+}
+function fmtDate(d) {
+  if (!isFinite(d) || d < 0) return '—';
+  const dt = new Date(); dt.setDate(dt.getDate() + Math.ceil(d));
+  return dt.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+}
+
+let _busy = false;
+function syncSlider(d) {
+  if (_busy) return; _busy = true;
+  $(d.n).value = posToVal(+$(d.r).value, d.max);
+  _busy = false; simUpdate();
+}
+function syncNum(d) {
+  if (_busy) return; _busy = true;
+  const v = Math.min(d.max, Math.max(0, +$(d.n).value || 0));
+  $(d.n).value = v;
+  $(d.r).value = valToPos(v, d.max);
+  _busy = false; simUpdate();
+}
+DON.forEach(d => {
+  $(d.r).addEventListener('input',  () => syncSlider(d));
+  $(d.n).addEventListener('input',  () => syncNum(d));
+  $(d.n).addEventListener('change', () => syncNum(d));
+});
+['curLvl', 'curXP', 'tgtLvl'].forEach(id => $(id).addEventListener('input', simUpdate));
+
+function simUpdate() {
+  const curLvl = Math.min(499, Math.max(1, +$('curLvl').value || 1));
+  const tgtLvl = Math.min(500, Math.max(curLvl + 1, +$('tgtLvl').value || curLvl + 1));
+  const cap    = xpPerLevel(curLvl);
+  const curXP  = Math.min(cap - 1, Math.max(0, +$('curXP').value || 0));
+  $('xpHint').textContent    = 'Max: ' + fmt(cap - 1) + ' XP';
+  const pct = Math.min(100, Math.round(curXP / cap * 100));
+  $('pbarLeft').textContent  = 'Level ' + curLvl + ' progress';
+  $('pbarRight').textContent = fmt(curXP) + ' / ' + fmt(cap) + ' XP (' + pct + '%)';
+  $('pbarFill').style.width  = pct + '%';
+
+  let daily = 0;
+  DON.forEach(d => {
+    const v  = Math.min(d.max, Math.max(0, +$(d.n).value || 0));
+    const xp = v * d.rate;
+    $(d.x).textContent = fmt(xp);
+    daily += xp;
+  });
+  $('totalXP').textContent = fmt(daily) + ' XP / day';
+  if (daily === 0) {
+    $('resultsInner').innerHTML = '<p class="empty-msg">Set donation values above to see projection.</p>';
+    return;
+  }
+
+  const needed = xpNeeded(curLvl, curXP, tgtLvl);
+  const days   = needed / daily;
+  let rows = '', cumDays = 0;
+  const maxRows = Math.min(tgtLvl, curLvl + 10);
+  for (let l = curLvl; l < maxRows; l++) {
+    const xpThis = l === curLvl ? cap - curXP : xpPerLevel(l);
+    cumDays += xpThis / daily;
+    const isTgt = (l + 1) === tgtLvl;
+    rows += `<tr class="${isTgt ? 'tgt-row' : ''}"><td>${l + 1}${isTgt ? ' ★' : ''}</td><td>${fmt(xpThis)}</td><td>${fmtTime(cumDays)}</td><td>${fmtDate(cumDays)}</td></tr>`;
+  }
+  if (tgtLvl > maxRows) {
+    const more = tgtLvl - maxRows;
+    rows += `<tr><td colspan="4" style="color:var(--text-t);font-size:11px;padding-top:6px">… ${more} more level${more > 1 ? 's' : ''} not shown</td></tr>`;
+  }
+  $('resultsInner').innerHTML = `
+    <div class="res-stat-row">
+      <div class="res-stat"><p class="rs-lbl">XP still needed</p><p class="rs-val">${fmt(needed)}</p><p class="rs-sub">to reach level ${tgtLvl}</p></div>
+      <div class="res-stat"><p class="rs-lbl">Time to target</p><p class="rs-val" style="font-size:${days > 9999 ? '13' : '17'}px">${fmtTime(days)}</p><p class="rs-sub">arrives ${fmtDate(days)}</p></div>
+      <div class="res-stat"><p class="rs-lbl">Weekly / monthly</p><p class="rs-val" style="font-size:14px">${fmt(daily * 7)}</p><p class="rs-sub">${fmt(daily * 30)} XP/month</p></div>
+    </div>
+    <table class="res-tbl"><thead><tr><th>Level</th><th>XP this level</th><th>Time from now</th><th>Arrival date</th></tr></thead><tbody>${rows}</tbody></table>
+    <div class="tip-row"><span style="font-size:15px">💡</span><span><strong>Efficiency:</strong> Spells give <strong>5×</strong> more XP than troops (5 vs 1 per space). Siege machines give <strong>30 XP each</strong> — highest rate per slot. Prioritise spells &amp; siege whenever Clan Castle capacity allows.</span></div>`;
+}
+
+/* ══ INIT ══ */
+buildOverview();
+renderTable();
+simUpdate();
+</script>
+</body>
+</html>
