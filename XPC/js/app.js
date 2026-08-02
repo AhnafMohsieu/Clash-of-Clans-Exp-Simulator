@@ -162,10 +162,10 @@ function bindInput(id, callback) {
   const element = document.getElementById(id);
   if (!element) return;
   
-  element.addEventListener('input', debounce(() => {
+  element.addEventListener('input', () => {
     callback(element.value);
     update();
-  }, 50));
+  });
 }
 
 // Preset Listeners
