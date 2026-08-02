@@ -1,591 +1,454 @@
-// Main Application Logic for XP Farming Simulator
-import { fmtK, loc, debounce, sanitizeHTML } from './utils.js';
-import { xpForLevel, totalNeeded, calculateXP } from './xp-calculator.js';
-import { savePreset, loadPreset, deletePreset, getPresets, exportPresets, importPresets } from './presets.js';
-import { initChart, updateChart, destroyChart } from './chart.js';
+// XP Farming Simulator - Single bundled file (no ES modules)
+(function() {
+'use strict';
 
-// Application State
-const state = {
-  profile: {
-    currentLevel: 1,
-    xpProgress: 0,
-    targetLevel: 2
-  },
-  activity: {
-    attacks: 0,
-    stars: 0
-  },
-  donations: {
-    troops: 0,
-    spells: 0,
-    siege: 0
-  },
-  builders: {
-    count: 0,
-    upgradeTime: 0
-  },
-  war: {
-    attacks: 0,
-    stars: 0,
-    seasonalBonus: 0
-  },
-  settings: {
-    theme: 'gold'
-  }
+// ── Utils ──
+function fmtK(v) {
+  if (v === 0) return '0';
+  if (v >= 1000000) return (v / 1000000).toFixed(1) + 'M';
+  if (v >= 1000) return parseFloat((v / 1000).toFixed(1)) + 'k';
+  return String(v);
+}
+
+function loc(v) {
+  return v.toLocaleString();
+}
+
+function clamp(value, min, max) {
+  return Math.min(Math.max(value, min), max);
+}
+
+function generateId() {
+  return Date.now().toString(36) + Math.random().toString(36).substr(2);
+}
+
+function deepClone(obj) {
+  return JSON.parse(JSON.stringify(obj));
+}
+
+function sanitizeHTML(str) {
+  var div = document.createElement('div');
+  div.textContent = str;
+  return div.innerHTML;
+}
+
+// ── XP Calculator ──
+function xpForLevel(level) {
+  if (level === 1) return 30;
+  if (level <= 200) return (level - 1) * 50;
+  if (level <= 299) return (level - 200) * 500 + 9500;
+  return (level - 300) * 1000 + 60000;
+}
+
+function cumulXP(level) {
+  if (level <= 1) return 0;
+  if (level <= 201) return (level - 1) * (level - 2) * 25 + 30;
+  if (level <= 299) return 250 * Math.pow(level - 200, 2) + 9250 * (level - 200) + 985530;
+  return 500 * Math.pow(level - 300, 2) + 59500 * (level - 300) + 4410530;
+}
+
+function totalNeeded(currentLevel, currentProgress, targetLevel) {
+  var earned = Math.round(xpForLevel(currentLevel) * currentProgress / 100);
+  return Math.max(0, cumulXP(targetLevel) - cumulXP(currentLevel) - earned);
+}
+
+function calculateAttacks(params) {
+  var attacksPerDay = params.attacksPerDay;
+  var avgStars = params.avgStars;
+  var dailyXP = attacksPerDay * avgStars * 1;
+  return { daily: attacksPerDay, xp: dailyXP };
+}
+
+function calculateDonations(params) {
+  var troopXP = params.troopSpaces * 1;
+  var spellXP = params.spellSpaces * 5;
+  var siegeXP = params.siegeMachines * 30;
+  return {
+    daily: params.troopSpaces + params.spellSpaces + params.siegeMachines,
+    xp: troopXP + spellXP + siegeXP,
+    breakdown: { troops: troopXP, spells: spellXP, siege: siegeXP }
+  };
+}
+
+function calculateBuilders(params) {
+  var upgradeTimeSeconds = params.upgradeTimeDays * 86400;
+  var xpPerBuilder = params.upgradeTimeDays > 0 ? Math.sqrt(upgradeTimeSeconds) : 0;
+  var totalXP = Math.round(params.builderCount * xpPerBuilder);
+  return { active: params.builderCount, xp: totalXP };
+}
+
+function calculateWars(params) {
+  var weeklyStars = clamp(params.warAttacksPerWeek * params.avgWarStars, 0, 14);
+  var dailyXP = Math.round(weeklyStars * 5 / 7 * 100) / 100;
+  return { weekly: weeklyStars, daily: dailyXP, xp: dailyXP };
+}
+
+function calculateSeason(params) {
+  return { daily: params.seasonalBonusPerDay, xp: params.seasonalBonusPerDay };
+}
+
+function calculateXP(params) {
+  var attacks = calculateAttacks({ attacksPerDay: params.atk, avgStars: params.stars });
+  var donations = calculateDonations({ troopSpaces: params.troopSV * 500, spellSpaces: params.spellSV * 50, siegeMachines: params.siegeSV * 5 });
+  var builders = calculateBuilders({ builderCount: params.bld, upgradeTimeDays: params.upg });
+  var wars = calculateWars({ warAttacksPerWeek: params.war, avgWarStars: params.warStars });
+  var season = calculateSeason({ seasonalBonusPerDay: params.season });
+  var totalDailyXP = attacks.xp + donations.xp + builders.xp + wars.xp + season.xp;
+  return {
+    attacks: attacks, donations: donations, builders: builders,
+    wars: wars, season: season,
+    total: { daily: totalDailyXP, weekly: Math.round(totalDailyXP * 7) }
+  };
+}
+
+// ── Presets ──
+var STORAGE_KEY = 'xp-simulator-presets';
+var MAX_PRESETS = 50;
+var MAX_STORAGE_SIZE = 5 * 1024 * 1024;
+
+function getPresets() {
+  try {
+    var data = localStorage.getItem(STORAGE_KEY);
+    return data ? JSON.parse(data) : [];
+  } catch (e) { return []; }
+}
+
+function savePreset(name, state) {
+  var presets = getPresets();
+  if (presets.length >= MAX_PRESETS) return { success: false, error: 'Max presets reached' };
+  var sanitizedName = sanitizeHTML(name.trim());
+  if (!sanitizedName) return { success: false, error: 'Name cannot be empty' };
+  if (presets.some(function(p) { return p.name === sanitizedName; }))
+    return { success: false, error: 'Name already exists' };
+  var preset = { id: generateId(), name: sanitizedName, state: deepClone(state), createdAt: new Date().toISOString() };
+  var newData = presets.concat([preset]);
+  if (new Blob([JSON.stringify(newData)]).size > MAX_STORAGE_SIZE)
+    return { success: false, error: 'Storage limit reached' };
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(newData)); return { success: true, preset: preset }; }
+  catch (e) { return { success: false, error: 'Failed to save' }; }
+}
+
+function loadPreset(id) {
+  var presets = getPresets();
+  var preset = presets.find(function(p) { return p.id === id; });
+  if (!preset) return { success: false, error: 'Not found' };
+  return { success: true, state: deepClone(preset.state) };
+}
+
+function deletePreset(id) {
+  var presets = getPresets();
+  var idx = presets.findIndex(function(p) { return p.id === id; });
+  if (idx === -1) return { success: false, error: 'Not found' };
+  presets.splice(idx, 1);
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(presets)); return { success: true }; }
+  catch (e) { return { success: false, error: 'Failed to delete' }; }
+}
+
+function exportPresets() { return JSON.stringify(getPresets(), null, 2); }
+
+function importPresets(jsonString) {
+  try {
+    var imported = JSON.parse(jsonString);
+    if (!Array.isArray(imported)) return { success: false, error: 'Invalid format' };
+    var existing = getPresets();
+    var ids = new Set(existing.map(function(p) { return p.id; }));
+    var newPresets = imported.filter(function(p) { return p.id && p.name && p.state && !ids.has(p.id); });
+    var combined = existing.concat(newPresets);
+    if (combined.length > MAX_PRESETS) return { success: false, error: 'Would exceed limit' };
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(combined));
+    return { success: true, imported: newPresets.length };
+  } catch (e) { return { success: false, error: 'Invalid JSON' }; }
+}
+
+// ── Chart ──
+var chartInstance = null;
+var BAR_COLORS = ['#FFD700', '#2E86DE', '#00E5FF', '#E04040', '#B04FFF'];
+var LABELS = ['Attacks', 'Builders', 'Donations', 'Wars', 'Season'];
+
+function initChart(canvasId) {
+  var canvas = document.getElementById(canvasId);
+  if (!canvas) return null;
+  if (typeof Chart === 'undefined') { console.warn('Chart.js not loaded'); return null; }
+  chartInstance = new Chart(canvas.getContext('2d'), {
+    type: 'bar',
+    data: { labels: LABELS, datasets: [{ label: 'Daily XP', data: [0,0,0,0,0], backgroundColor: BAR_COLORS, borderRadius: 6, borderSkipped: false }] },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      animation: { duration: 400, easing: 'easeOutQuart' },
+      plugins: { legend: { display: false }, tooltip: { backgroundColor: '#10161e', borderColor: 'rgba(255,215,0,0.2)', borderWidth: 1, titleColor: '#FFD700', bodyColor: '#8899aa', padding: 10, callbacks: { label: function(c) { return '  ' + loc(c.parsed.y) + ' XP / day'; } } } },
+      scales: { x: { grid: { display: false }, ticks: { font: { size: 11, family: 'Barlow' }, color: '#556677' } }, y: { grid: { color: 'rgba(255,255,255,0.04)' }, border: { display: false }, ticks: { font: { size: 11, family: 'Barlow' }, color: '#556677', callback: function(v) { return fmtK(v) + ' XP'; } } } }
+    }
+  });
+  return chartInstance;
+}
+
+function updateChart(xpData) {
+  if (!chartInstance) return;
+  chartInstance.data.datasets[0].data = [xpData.attacks.xp, xpData.builders.xp, xpData.donations.xp, xpData.wars.xp, xpData.season.xp];
+  chartInstance.update('active');
+}
+
+// ── App State ──
+var state = {
+  profile: { currentLevel: 1, xpProgress: 0, targetLevel: 2 },
+  activity: { attacks: 0, stars: 0 },
+  donations: { troops: 0, spells: 0, siege: 0 },
+  builders: { count: 0, upgradeTime: 0 },
+  war: { attacks: 0, stars: 0, seasonalBonus: 0 },
+  settings: { theme: 'gold' }
 };
 
-// Event Emitter
-const events = {};
-
-function emit(eventName, data) {
-  if (events[eventName]) {
-    events[eventName].forEach(callback => callback(data));
-  }
-}
-
-function on(eventName, callback) {
-  if (!events[eventName]) {
-    events[eventName] = [];
-  }
-  events[eventName].push(callback);
-}
-
-// Initialize Application
-export function init() {
-  // Initialize chart (non-critical)
-  try {
-    initChart('bkChart');
-  } catch (e) {
-    console.warn('Chart init failed:', e);
-  }
-  
-  // Bind event listeners
+// ── Init ──
+function init() {
+  try { initChart('bkChart'); } catch (e) { console.warn('Chart init failed:', e); }
   bindInputListeners();
   bindPresetListeners();
   bindKeyboardShortcuts();
-  
-  // Apply thumb styles
   applyThumbStyles();
-  
-  // Initial calculation
   update();
-  
   console.log('XP Farming Simulator initialized');
 }
 
 function applyThumbStyles() {
-  const styleEl = document.getElementById('dynamic-thumb-styles') || createDynamicStyles();
-  
-  const cardColors = [
+  var styleEl = document.getElementById('dynamic-thumb-styles');
+  if (!styleEl) { styleEl = document.createElement('style'); styleEl.id = 'dynamic-thumb-styles'; document.head.appendChild(styleEl); }
+  var cardColors = [
     { ids: ['xpPct'], color: '#FFD700' },
     { ids: ['atkSlider', 'starsSlider'], color: '#FF6B35' },
     { ids: ['troopSlider', 'spellSlider', 'siegeSlider'], color: '#00E5FF' },
     { ids: ['bldSlider', 'upgSlider'], color: '#4CAF50' },
     { ids: ['warSlider', 'warStarsSlider', 'seasonSlider'], color: '#B04FFF' }
   ];
-  
-  let css = '';
-  cardColors.forEach(({ ids, color }) => {
-    ids.forEach(id => {
-      css += `#${id}::-webkit-slider-thumb{background:radial-gradient(circle at 35% 35%,${color}dd,${color});box-shadow:0 0 8px ${color}88;}`;
-      css += `#${id}::-moz-range-thumb{background:${color};}`;
+  var css = '';
+  cardColors.forEach(function(c) {
+    c.ids.forEach(function(id) {
+      css += '#' + id + '::-webkit-slider-thumb{background:radial-gradient(circle at 35% 35%,' + c.color + 'dd,' + c.color + ');box-shadow:0 0 8px ' + c.color + '88;}';
+      css += '#' + id + '::-moz-range-thumb{background:' + c.color + ';}';
     });
   });
-  
   styleEl.textContent = css;
 }
 
-function createDynamicStyles() {
-  const style = document.createElement('style');
-  style.id = 'dynamic-thumb-styles';
-  document.head.appendChild(style);
-  return style;
-}
-
-// Input Binding
-function bindInputListeners() {
-  // Profile inputs
-  bindInput('curLvl', (value) => {
-    state.profile.currentLevel = Math.max(1, Math.min(499, parseInt(value) || 1));
-  });
-  
-  bindInput('xpPct', (value) => {
-    state.profile.xpProgress = parseInt(value) || 0;
-  });
-  
-  bindInput('tgtLvl', (value) => {
-    state.profile.targetLevel = Math.max(state.profile.currentLevel + 1, Math.min(500, parseInt(value) || state.profile.currentLevel + 1));
-  });
-  
-  // Activity inputs
-  bindInput('atkSlider', (value) => {
-    state.activity.attacks = parseInt(value) || 0;
-  });
-  
-  bindInput('starsSlider', (value) => {
-    state.activity.stars = parseInt(value) || 0;
-  });
-  
-  // Donation inputs
-  bindInput('troopSlider', (value) => {
-    state.donations.troops = parseInt(value) || 0;
-  });
-  
-  bindInput('spellSlider', (value) => {
-    state.donations.spells = parseInt(value) || 0;
-  });
-  
-  bindInput('siegeSlider', (value) => {
-    state.donations.siege = parseInt(value) || 0;
-  });
-  
-  // Builder inputs
-  bindInput('bldSlider', (value) => {
-    state.builders.count = parseInt(value) || 0;
-  });
-  
-  bindInput('upgSlider', (value) => {
-    state.builders.upgradeTime = parseFloat(value) || 0;
-  });
-  
-  // War inputs
-  bindInput('warSlider', (value) => {
-    state.war.attacks = parseInt(value) || 0;
-  });
-  
-  bindInput('warStarsSlider', (value) => {
-    state.war.stars = parseInt(value) || 0;
-  });
-  
-  bindInput('seasonSlider', (value) => {
-    state.war.seasonalBonus = parseInt(value) || 0;
-  });
-}
-
+// ── Input Binding ──
 function bindInput(id, callback) {
-  const element = document.getElementById(id);
+  var element = document.getElementById(id);
   if (!element) return;
-  
-  element.addEventListener('input', () => {
-    callback(element.value);
-    update();
-  });
+  element.addEventListener('input', function() { callback(element.value); update(); });
 }
 
-// Preset Listeners
+function bindInputListeners() {
+  bindInput('curLvl', function(v) { state.profile.currentLevel = Math.max(1, Math.min(499, parseInt(v) || 1)); });
+  bindInput('xpPct', function(v) { state.profile.xpProgress = parseInt(v) || 0; });
+  bindInput('tgtLvl', function(v) { state.profile.targetLevel = Math.max(state.profile.currentLevel + 1, Math.min(500, parseInt(v) || state.profile.currentLevel + 1)); });
+  bindInput('atkSlider', function(v) { state.activity.attacks = parseInt(v) || 0; });
+  bindInput('starsSlider', function(v) { state.activity.stars = parseInt(v) || 0; });
+  bindInput('troopSlider', function(v) { state.donations.troops = parseInt(v) || 0; });
+  bindInput('spellSlider', function(v) { state.donations.spells = parseInt(v) || 0; });
+  bindInput('siegeSlider', function(v) { state.donations.siege = parseInt(v) || 0; });
+  bindInput('bldSlider', function(v) { state.builders.count = parseInt(v) || 0; });
+  bindInput('upgSlider', function(v) { state.builders.upgradeTime = parseFloat(v) || 0; });
+  bindInput('warSlider', function(v) { state.war.attacks = parseInt(v) || 0; });
+  bindInput('warStarsSlider', function(v) { state.war.stars = parseInt(v) || 0; });
+  bindInput('seasonSlider', function(v) { state.war.seasonalBonus = parseInt(v) || 0; });
+}
+
+// ── Preset UI ──
 function bindPresetListeners() {
-  // Save preset button
-  const saveBtn = document.getElementById('save-preset-btn');
-  if (saveBtn) {
-    saveBtn.addEventListener('click', showSavePresetModal);
-  }
-  
-  // Load preset dropdown
-  const loadSelect = document.getElementById('load-preset-select');
-  if (loadSelect) {
-    loadSelect.addEventListener('change', (e) => {
-      const presetId = e.target.value;
-      if (presetId) {
-        loadPresetById(presetId);
-      }
-    });
-  }
-  
-  // Delete preset button
-  const deleteBtn = document.getElementById('delete-preset-btn');
-  if (deleteBtn) {
-    deleteBtn.addEventListener('click', deleteCurrentPreset);
-  }
-  
-  // Export presets button
-  const exportBtn = document.getElementById('export-presets-btn');
-  if (exportBtn) {
-    exportBtn.addEventListener('click', exportAllPresets);
-  }
-  
-  // Import presets button
-  const importBtn = document.getElementById('import-presets-btn');
-  if (importBtn) {
-    importBtn.addEventListener('click', importPresetsFromFile);
-  }
-  
-  // Update preset list on load
+  var saveBtn = document.getElementById('save-preset-btn');
+  if (saveBtn) saveBtn.addEventListener('click', showSavePresetModal);
+  var loadSelect = document.getElementById('load-preset-select');
+  if (loadSelect) loadSelect.addEventListener('change', function(e) { if (e.target.value) loadPresetById(e.target.value); });
+  var deleteBtn = document.getElementById('delete-preset-btn');
+  if (deleteBtn) deleteBtn.addEventListener('click', deleteCurrentPreset);
+  var exportBtn = document.getElementById('export-presets-btn');
+  if (exportBtn) exportBtn.addEventListener('click', exportAllPresets);
+  var importBtn = document.getElementById('import-presets-btn');
+  if (importBtn) importBtn.addEventListener('click', importPresetsFromFile);
   updatePresetList();
 }
 
-// Keyboard Shortcuts
-function bindKeyboardShortcuts() {
-  document.addEventListener('keydown', (e) => {
-    // Ctrl+S: Save preset
-    if (e.ctrlKey && e.key === 's') {
-      e.preventDefault();
-      showSavePresetModal();
-    }
-    
-    // Ctrl+E: Export results
-    if (e.ctrlKey && e.key === 'e') {
-      e.preventDefault();
-      exportResults();
-    }
-    
-    // Ctrl+Z: Undo (placeholder for future implementation)
-    if (e.ctrlKey && e.key === 'z') {
-      e.preventDefault();
-      console.log('Undo functionality coming soon');
-    }
-    
-    // ?: Show help
-    if (e.key === '?' && !e.ctrlKey && !e.altKey) {
-      showHelpModal();
-    }
-    
-    // Esc: Close modals
-    if (e.key === 'Escape') {
-      closeAllModals();
-    }
-  });
-}
-
-// Main Update Function
-function update() {
-  // Update display values
-  updateDisplayValues();
-  
-  // Calculate XP
-  const xpData = calculateXP({
-    atk: state.activity.attacks,
-    stars: state.activity.stars,
-    troopSV: state.donations.troops,
-    spellSV: state.donations.spells,
-    siegeSV: state.donations.siege,
-    bld: state.builders.count,
-    upg: state.builders.upgradeTime,
-    war: state.war.attacks,
-    warStars: state.war.stars,
-    season: state.war.seasonalBonus
-  });
-  
-  // Update results
-  updateResults(xpData);
-  
-  // Update chart
-  updateChart(xpData);
-  
-  // Emit update event
-  emit('stateChanged', { state, xpData });
-}
-
-function updateDisplayValues() {
-  // Profile
-  document.getElementById('xpPctOut').textContent = state.profile.xpProgress + '%';
-  
-  // Activity
-  document.getElementById('atkOut').textContent = state.activity.attacks;
-  document.getElementById('starsOut').textContent = state.activity.stars;
-  
-  // Donations
-  document.getElementById('troopOut').textContent = fmtK(state.donations.troops * 500);
-  document.getElementById('spellOut').textContent = fmtK(state.donations.spells * 50);
-  document.getElementById('siegeOut').textContent = fmtK(state.donations.siege * 5);
-  
-  // Builders
-  document.getElementById('bldOut').textContent = state.builders.count;
-  document.getElementById('upgOut').textContent = state.builders.upgradeTime + 'd';
-  
-  // War
-  document.getElementById('warOut').textContent = state.war.attacks;
-  document.getElementById('warStarsOut').textContent = state.war.stars;
-  document.getElementById('seasonOut').textContent = state.war.seasonalBonus;
-}
-
-function updateResults(xpData) {
-  const needed = totalNeeded(
-    state.profile.currentLevel,
-    state.profile.xpProgress,
-    state.profile.targetLevel
-  );
-  
-  const days = xpData.total.daily > 0 ? Math.ceil(needed / xpData.total.daily) : Infinity;
-  
-  const timeStr = days === Infinity ? '—' : 
-    days < 365 ? days + 'd' : (days / 365).toFixed(1) + 'y';
-  
-  const timeLong = days === Infinity ? 'No XP gained' :
-    days <= 1 ? '1 day' :
-    days < 7 ? days + ' days' :
-    days < 30 ? (days / 7).toFixed(1) + ' weeks' :
-    days < 365 ? (days / 30).toFixed(1) + ' months' :
-    (days / 365).toFixed(1) + ' years';
-  
-  const xpNow = xpForLevel(state.profile.currentLevel);
-  const earned = Math.round(xpNow * state.profile.xpProgress / 100);
-  
-  // Update result cards
-  const resultsContainer = document.getElementById('results');
-  if (resultsContainer) {
-    resultsContainer.innerHTML = `
-      <div class="rcards">
-        <div class="rcard" style="border:1px solid rgba(255,255,255,0.06);">
-          <div class="rc-top" style="background:linear-gradient(90deg,#AA7700,#FFD700)"></div>
-          <div class="rc-lbl">XP Needed</div>
-          <div class="rc-val" style="color:#FFD700">${needed >= 1000 ? fmtK(needed) : loc(needed)}</div>
-          <div class="rc-sub">to reach lvl ${state.profile.targetLevel}</div>
-        </div>
-        <div class="rcard" style="border:1px solid rgba(255,255,255,0.06);">
-          <div class="rc-top" style="background:linear-gradient(90deg,#1A5276,#2E86DE)"></div>
-          <div class="rc-lbl">Daily XP</div>
-          <div class="rc-val" style="color:#ccd6e0">${fmtK(xpData.total.daily)}</div>
-          <div class="rc-sub">at current pace</div>
-        </div>
-        <div class="rcard" style="border:1px solid rgba(255,255,255,0.06);">
-          <div class="rc-top" style="background:linear-gradient(90deg,#AA7700,#FFD700,#FFF066)"></div>
-          <div class="rc-lbl">Time to Target</div>
-          <div class="rc-val" style="color:#FFD700;text-shadow:0 0 20px rgba(255,215,0,0.4)">${timeStr}</div>
-          <div class="rc-sub">${timeLong}</div>
-        </div>
-        <div class="rcard" style="border:1px solid rgba(255,255,255,0.06);">
-          <div class="rc-top" style="background:linear-gradient(90deg,#1D6A35,#27AE60)"></div>
-          <div class="rc-lbl">Levels to Climb</div>
-          <div class="rc-val" style="color:#ccd6e0">${state.profile.targetLevel - state.profile.currentLevel}</div>
-          <div class="rc-sub">lvl ${state.profile.currentLevel} → ${state.profile.targetLevel}</div>
-        </div>
-      </div>
-      
-      <div class="prog-wrap" style="border:1px solid rgba(255,255,255,0.05)">
-        <div class="prog-hdr">
-          <span class="prog-lbl">Level ${state.profile.currentLevel} Progress</span>
-          <span class="prog-val">${state.profile.xpProgress}% · ${earned.toLocaleString()} / ${xpNow.toLocaleString()} XP</span>
-        </div>
-        <div class="prog-track"><div class="prog-fill" style="width:${state.profile.xpProgress}%"></div></div>
-      </div>
-      
-      <div class="bk-wrap" style="border:1px solid rgba(255,255,255,0.05)">
-        <p class="bk-title"><span>⚡</span>Daily XP Breakdown</p>
-        ${generateBreakdownRows(xpData)}
-        <div style="display:flex;justify-content:flex-end;padding-top:8px;font-size:12px;color:#8899aa;">
-          Total: <strong style="color:var(--acc)">${loc(xpData.total.daily)} XP / day</strong>
-        </div>
-      </div>
-      
-      ${generateWarnings(xpData, days)}
-    `;
+function showSavePresetModal() {
+  var name = prompt('Enter preset name:');
+  if (name) {
+    var result = savePreset(name, state);
+    if (result.success) { alert('Preset saved!'); updatePresetList(); }
+    else alert('Error: ' + result.error);
   }
 }
 
+function loadPresetById(id) {
+  var result = loadPreset(id);
+  if (result.success) { Object.assign(state, result.state); updateInputsFromState(); update(); }
+  else alert('Error: ' + result.error);
+}
+
+function deleteCurrentPreset() {
+  var select = document.getElementById('load-preset-select');
+  var id = select && select.value;
+  if (!id) { alert('Select a preset to delete'); return; }
+  if (confirm('Delete this preset?')) {
+    var result = deletePreset(id);
+    if (result.success) { alert('Deleted'); updatePresetList(); }
+    else alert('Error: ' + result.error);
+  }
+}
+
+function updatePresetList() {
+  var select = document.getElementById('load-preset-select');
+  if (!select) return;
+  var presets = getPresets();
+  select.innerHTML = '<option value="">Select a preset...</option>';
+  presets.forEach(function(p) {
+    var opt = document.createElement('option');
+    opt.value = p.id; opt.textContent = p.name;
+    select.appendChild(opt);
+  });
+}
+
+function updateInputsFromState() {
+  var el;
+  el = document.getElementById('curLvl'); if (el) el.value = state.profile.currentLevel;
+  el = document.getElementById('xpPct'); if (el) el.value = state.profile.xpProgress;
+  el = document.getElementById('tgtLvl'); if (el) el.value = state.profile.targetLevel;
+  el = document.getElementById('atkSlider'); if (el) el.value = state.activity.attacks;
+  el = document.getElementById('starsSlider'); if (el) el.value = state.activity.stars;
+  el = document.getElementById('troopSlider'); if (el) el.value = state.donations.troops;
+  el = document.getElementById('spellSlider'); if (el) el.value = state.donations.spells;
+  el = document.getElementById('siegeSlider'); if (el) el.value = state.donations.siege;
+  el = document.getElementById('bldSlider'); if (el) el.value = state.builders.count;
+  el = document.getElementById('upgSlider'); if (el) el.value = state.builders.upgradeTime;
+  el = document.getElementById('warSlider'); if (el) el.value = state.war.attacks;
+  el = document.getElementById('warStarsSlider'); if (el) el.value = state.war.stars;
+  el = document.getElementById('seasonSlider'); if (el) el.value = state.war.seasonalBonus;
+}
+
+// ── Keyboard Shortcuts ──
+function bindKeyboardShortcuts() {
+  document.addEventListener('keydown', function(e) {
+    if (e.ctrlKey && e.key === 's') { e.preventDefault(); showSavePresetModal(); }
+    if (e.ctrlKey && e.key === 'e') { e.preventDefault(); exportResults(); }
+    if (e.key === '?' && !e.ctrlKey && !e.altKey) showHelpModal();
+    if (e.key === 'Escape') closeAllModals();
+  });
+}
+
+// ── Main Update ──
+function update() {
+  updateDisplayValues();
+  var xpData = calculateXP({
+    atk: state.activity.attacks, stars: state.activity.stars,
+    troopSV: state.donations.troops, spellSV: state.donations.spells, siegeSV: state.donations.siege,
+    bld: state.builders.count, upg: state.builders.upgradeTime,
+    war: state.war.attacks, warStars: state.war.stars, season: state.war.seasonalBonus
+  });
+  updateResults(xpData);
+  updateChart(xpData);
+}
+
+function updateDisplayValues() {
+  var el;
+  el = document.getElementById('xpPctOut'); if (el) el.textContent = state.profile.xpProgress + '%';
+  el = document.getElementById('atkOut'); if (el) el.textContent = state.activity.attacks;
+  el = document.getElementById('starsOut'); if (el) el.textContent = state.activity.stars;
+  el = document.getElementById('troopOut'); if (el) el.textContent = fmtK(state.donations.troops * 500);
+  el = document.getElementById('spellOut'); if (el) el.textContent = fmtK(state.donations.spells * 50);
+  el = document.getElementById('siegeOut'); if (el) el.textContent = fmtK(state.donations.siege * 5);
+  el = document.getElementById('bldOut'); if (el) el.textContent = state.builders.count;
+  el = document.getElementById('upgOut'); if (el) el.textContent = state.builders.upgradeTime + 'd';
+  el = document.getElementById('warOut'); if (el) el.textContent = state.war.attacks;
+  el = document.getElementById('warStarsOut'); if (el) el.textContent = state.war.stars;
+  el = document.getElementById('seasonOut'); if (el) el.textContent = state.war.seasonalBonus;
+}
+
+function updateResults(xpData) {
+  var needed = totalNeeded(state.profile.currentLevel, state.profile.xpProgress, state.profile.targetLevel);
+  var days = xpData.total.daily > 0 ? Math.ceil(needed / xpData.total.daily) : Infinity;
+  var timeStr = days === Infinity ? '\u2014' : days < 365 ? days + 'd' : (days / 365).toFixed(1) + 'y';
+  var timeLong = days === Infinity ? 'No XP gained' : days <= 1 ? '1 day' : days < 7 ? days + ' days' : days < 30 ? (days / 7).toFixed(1) + ' weeks' : days < 365 ? (days / 30).toFixed(1) + ' months' : (days / 365).toFixed(1) + ' years';
+  var xpNow = xpForLevel(state.profile.currentLevel);
+  var earned = Math.round(xpNow * state.profile.xpProgress / 100);
+  var rc = document.getElementById('results');
+  if (!rc) return;
+  rc.innerHTML =
+    '<div class="rcards">' +
+      '<div class="rcard" style="border:1px solid rgba(255,255,255,0.06)"><div class="rc-top" style="background:linear-gradient(90deg,#AA7700,#FFD700)"></div><div class="rc-lbl">XP Needed</div><div class="rc-val" style="color:#FFD700">' + (needed >= 1000 ? fmtK(needed) : loc(needed)) + '</div><div class="rc-sub">to reach lvl ' + state.profile.targetLevel + '</div></div>' +
+      '<div class="rcard" style="border:1px solid rgba(255,255,255,0.06)"><div class="rc-top" style="background:linear-gradient(90deg,#1A5276,#2E86DE)"></div><div class="rc-lbl">Daily XP</div><div class="rc-val" style="color:#ccd6e0">' + fmtK(xpData.total.daily) + '</div><div class="rc-sub">at current pace</div></div>' +
+      '<div class="rcard" style="border:1px solid rgba(255,255,255,0.06)"><div class="rc-top" style="background:linear-gradient(90deg,#AA7700,#FFD700,#FFF066)"></div><div class="rc-lbl">Time to Target</div><div class="rc-val" style="color:#FFD700;text-shadow:0 0 20px rgba(255,215,0,0.4)">' + timeStr + '</div><div class="rc-sub">' + timeLong + '</div></div>' +
+      '<div class="rcard" style="border:1px solid rgba(255,255,255,0.06)"><div class="rc-top" style="background:linear-gradient(90deg,#1D6A35,#27AE60)"></div><div class="rc-lbl">Levels to Climb</div><div class="rc-val" style="color:#ccd6e0">' + (state.profile.targetLevel - state.profile.currentLevel) + '</div><div class="rc-sub">lvl ' + state.profile.currentLevel + ' \u2192 ' + state.profile.targetLevel + '</div></div>' +
+    '</div>' +
+    '<div class="prog-wrap" style="border:1px solid rgba(255,255,255,0.05)"><div class="prog-hdr"><span class="prog-lbl">Level ' + state.profile.currentLevel + ' Progress</span><span class="prog-val">' + state.profile.xpProgress + '% \u00b7 ' + earned.toLocaleString() + ' / ' + xpNow.toLocaleString() + ' XP</span></div><div class="prog-track"><div class="prog-fill" style="width:' + state.profile.xpProgress + '%"></div></div></div>' +
+    '<div class="bk-wrap" style="border:1px solid rgba(255,255,255,0.05)"><p class="bk-title"><span>\u26a1</span>Daily XP Breakdown</p>' + generateBreakdownRows(xpData) + '<div style="display:flex;justify-content:flex-end;padding-top:8px;font-size:12px;color:#8899aa;">Total: <strong style="color:var(--acc)">' + loc(xpData.total.daily) + ' XP / day</strong></div></div>' +
+    generateWarnings(xpData, days);
+}
+
 function generateBreakdownRows(xpData) {
-  const sources = [
+  var sources = [
     { name: 'Multiplayer Attacks', xp: xpData.attacks.xp, color: '#FFD700' },
     { name: 'Builder Upgrades', xp: xpData.builders.xp, color: '#2E86DE' },
     { name: 'Donations', xp: xpData.donations.xp, color: '#00E5FF', hasSub: true },
     { name: 'Clan Wars', xp: xpData.wars.xp, color: '#E04040' },
     { name: 'Seasonal / Events', xp: xpData.season.xp, color: '#B04FFF' }
   ];
-  
-  return sources.map(source => {
-    const pct = xpData.total.daily > 0 ? 
-      Math.round((source.xp / xpData.total.daily) * 100) : 0;
-    
-    let subRows = '';
-    if (source.hasSub && xpData.donations.xp > 0) {
-      subRows = `
-        <div class="sub-row">
-          <span class="sub-name">↳ Troops (${fmtK(xpData.donations.breakdown.troops)} XP)</span>
-          <span class="sub-detail">× 1 XP / space</span>
-          <span class="sub-xp">${loc(xpData.donations.breakdown.troops)} XP</span>
-        </div>
-        <div class="sub-row">
-          <span class="sub-name">↳ Spells (${fmtK(xpData.donations.breakdown.spells)} XP)</span>
-          <span class="sub-detail">× 5 XP / space</span>
-          <span class="sub-xp">${loc(xpData.donations.breakdown.spells)} XP</span>
-        </div>
-        <div class="sub-row">
-          <span class="sub-name">↳ Siege Machines (${fmtK(xpData.donations.breakdown.siege)} XP)</span>
-          <span class="sub-detail">× 30 XP each</span>
-          <span class="sub-xp">${loc(xpData.donations.breakdown.siege)} XP</span>
-        </div>`;
+  return sources.map(function(s) {
+    var pct = xpData.total.daily > 0 ? Math.round((s.xp / xpData.total.daily) * 100) : 0;
+    var sub = '';
+    if (s.hasSub && xpData.donations.xp > 0) {
+      sub = '<div class="sub-row"><span class="sub-name">\u2503 Troops (' + fmtK(xpData.donations.breakdown.troops) + ' XP)</span><span class="sub-detail">\u00d7 1 XP / space</span><span class="sub-xp">' + loc(xpData.donations.breakdown.troops) + ' XP</span></div>' +
+        '<div class="sub-row"><span class="sub-name">\u2503 Spells (' + fmtK(xpData.donations.breakdown.spells) + ' XP)</span><span class="sub-detail">\u00d7 5 XP / space</span><span class="sub-xp">' + loc(xpData.donations.breakdown.spells) + ' XP</span></div>' +
+        '<div class="sub-row"><span class="sub-name">\u2503 Siege Machines (' + fmtK(xpData.donations.breakdown.siege) + ' XP)</span><span class="sub-detail">\u00d7 30 XP each</span><span class="sub-xp">' + loc(xpData.donations.breakdown.siege) + ' XP</span></div>';
     }
-    
-    return `
-      <div class="bk-row">
-        <span class="bk-dot" style="background:${source.color}"></span>
-        <span class="bk-name">${source.name}</span>
-        <div class="bk-bar"><div class="bk-fill" style="width:${pct}%;background:${source.color}"></div></div>
-        <span class="bk-xp">${loc(source.xp)}</span>
-        <span class="bk-pct">${pct}%</span>
-      </div>
-      ${subRows}
-    `;
+    return '<div class="bk-row"><span class="bk-dot" style="background:' + s.color + '"></span><span class="bk-name">' + s.name + '</span><div class="bk-bar"><div class="bk-fill" style="width:' + pct + '%;background:' + s.color + '"></div></div><span class="bk-xp">' + loc(s.xp) + '</span><span class="bk-pct">' + pct + '%</span></div>' + sub;
   }).join('');
 }
 
 function generateWarnings(xpData, days) {
-  const warnings = [];
-  
-  if (xpData.total.daily === 0) {
-    warnings.push('Set some daily activities to see your farming estimate.');
-  }
-  
-  if (days > 365 * 2) {
-    warnings.push('Target is over 2 years away — try a closer target or increase activity.');
-  }
-  
-  return warnings.map(w => `<div class="warn">⚠️ ${w}</div>`).join('');
+  var w = [];
+  if (xpData.total.daily === 0) w.push('Set some daily activities to see your farming estimate.');
+  if (days > 365 * 2) w.push('Target is over 2 years away \u2014 try a closer target or increase activity.');
+  return w.map(function(m) { return '<div class="warn">\u26a0\ufe0f ' + m + '</div>'; }).join('');
 }
 
-// Preset Functions
-function showSavePresetModal() {
-  const name = prompt('Enter preset name:');
-  if (name) {
-    const result = savePreset(name, state);
-    if (result.success) {
-      alert('Preset saved successfully!');
-      updatePresetList();
-    } else {
-      alert('Error: ' + result.error);
-    }
-  }
-}
-
-function loadPresetById(id) {
-  const result = loadPreset(id);
-  if (result.success) {
-    Object.assign(state, result.state);
-    updateInputsFromState();
-    update();
-  } else {
-    alert('Error: ' + result.error);
-  }
-}
-
-function deleteCurrentPreset() {
-  const select = document.getElementById('load-preset-select');
-  const id = select?.value;
-  
-  if (!id) {
-    alert('Please select a preset to delete');
-    return;
-  }
-  
-  if (confirm('Are you sure you want to delete this preset?')) {
-    const result = deletePreset(id);
-    if (result.success) {
-      alert('Preset deleted');
-      updatePresetList();
-    } else {
-      alert('Error: ' + result.error);
-    }
-  }
-}
-
-function updatePresetList() {
-  const select = document.getElementById('load-preset-select');
-  if (!select) return;
-  
-  const presets = getPresets();
-  select.innerHTML = '<option value="">Select a preset...</option>';
-  
-  presets.forEach(preset => {
-    const option = document.createElement('option');
-    option.value = preset.id;
-    option.textContent = preset.name;
-    select.appendChild(option);
-  });
-}
-
-function updateInputsFromState() {
-  // Profile
-  document.getElementById('curLvl').value = state.profile.currentLevel;
-  document.getElementById('xpPct').value = state.profile.xpProgress;
-  document.getElementById('tgtLvl').value = state.profile.targetLevel;
-  
-  // Activity
-  document.getElementById('atkSlider').value = state.activity.attacks;
-  document.getElementById('starsSlider').value = state.activity.stars;
-  
-  // Donations
-  document.getElementById('troopSlider').value = state.donations.troops;
-  document.getElementById('spellSlider').value = state.donations.spells;
-  document.getElementById('siegeSlider').value = state.donations.siege;
-  
-  // Builders
-  document.getElementById('bldSlider').value = state.builders.count;
-  document.getElementById('upgSlider').value = state.builders.upgradeTime;
-  
-  // War
-  document.getElementById('warSlider').value = state.war.attacks;
-  document.getElementById('warStarsSlider').value = state.war.stars;
-  document.getElementById('seasonSlider').value = state.war.seasonalBonus;
-}
-
-// Export Functions
+// ── Export / Import ──
 function exportResults() {
-  const results = {
-    state,
-    timestamp: new Date().toISOString()
-  };
-  
-  const blob = new Blob([JSON.stringify(results, null, 2)], { type: 'application/json' });
-  const url = URL.createObjectURL(blob);
-  
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = `xp-simulator-results-${Date.now()}.json`;
-  a.click();
-  
+  var blob = new Blob([JSON.stringify({ state: state, timestamp: new Date().toISOString() }, null, 2)], { type: 'application/json' });
+  var url = URL.createObjectURL(blob);
+  var a = document.createElement('a'); a.href = url; a.download = 'xp-simulator-results-' + Date.now() + '.json'; a.click();
   URL.revokeObjectURL(url);
 }
 
 function exportAllPresets() {
-  const data = exportPresets();
-  const blob = new Blob([data], { type: 'application/json' });
-  const url = URL.createObjectURL(blob);
-  
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = `xp-simulator-presets-${Date.now()}.json`;
-  a.click();
-  
+  var blob = new Blob([exportPresets()], { type: 'application/json' });
+  var url = URL.createObjectURL(blob);
+  var a = document.createElement('a'); a.href = url; a.download = 'xp-simulator-presets-' + Date.now() + '.json'; a.click();
   URL.revokeObjectURL(url);
 }
 
 function importPresetsFromFile() {
-  const input = document.createElement('input');
-  input.type = 'file';
-  input.accept = '.json';
-  
-  input.onchange = (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
-    
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      const result = importPresets(event.target.result);
-      if (result.success) {
-        alert(`Imported ${result.imported} presets`);
-        updatePresetList();
-      } else {
-        alert('Import failed: ' + result.error);
-      }
+  var input = document.createElement('input'); input.type = 'file'; input.accept = '.json';
+  input.onchange = function(e) {
+    var file = e.target.files[0]; if (!file) return;
+    var reader = new FileReader();
+    reader.onload = function(ev) {
+      var result = importPresets(ev.target.result);
+      if (result.success) { alert('Imported ' + result.imported + ' presets'); updatePresetList(); }
+      else alert('Import failed: ' + result.error);
     };
     reader.readAsText(file);
   };
-  
   input.click();
 }
 
-// Modal Functions
 function showHelpModal() {
-  alert('Keyboard Shortcuts:\n\n' +
-    'Ctrl+S: Save preset\n' +
-    'Ctrl+E: Export results\n' +
-    '?: Show this help\n' +
-    'Esc: Close modals');
+  alert('Keyboard Shortcuts:\n\nCtrl+S: Save preset\nCtrl+E: Export results\n?: Show this help\nEsc: Close modals');
 }
 
-function closeAllModals() {
-  // Placeholder for future modal implementation
-  console.log('Closing modals');
+function closeAllModals() {}
+
+// ── Boot ──
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', init);
+} else {
+  init();
 }
 
-// Initialize on DOM ready
-document.addEventListener('DOMContentLoaded', init);
+})();
