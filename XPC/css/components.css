@@ -57,7 +57,8 @@
   border-radius: 4px;
   padding: 4px 24px;
   margin-bottom: 14px;
-  font-size: 11px;
+  font-size: 12px;
+  font-weight: 700;
   color: var(--acc);
   letter-spacing: 0.3em;
   text-transform: uppercase;
@@ -77,9 +78,10 @@
 }
 
 .hdr p {
-  color: #667788;
-  font-size: 13px;
-  letter-spacing: 0.08em;
+  color: #778899;
+  font-size: 14px;
+  font-weight: 500;
+  letter-spacing: 0.05em;
 }
 
 .hdr-rule {
@@ -119,9 +121,9 @@
 
 .ptitle {
   font-family: 'Cinzel', serif;
-  font-size: 10px;
-  font-weight: 600;
-  letter-spacing: 0.2em;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.15em;
   text-transform: uppercase;
   margin-bottom: 16px;
   display: flex;
@@ -157,14 +159,14 @@
 }
 
 .fl-label {
-  font-size: 12px;
-  color: #8899aa;
-  font-weight: 400;
+  font-size: 13px;
+  color: #99aabb;
+  font-weight: 600;
 }
 
 .val-badge {
-  font-size: 13px;
-  font-weight: 700;
+  font-size: 14px;
+  font-weight: 800;
   padding: 2px 10px;
   border-radius: 4px;
   min-width: 54px;
@@ -180,8 +182,8 @@ input[type="number"] {
   border-radius: 7px;
   padding: 8px 12px;
   font-size: 15px;
-  font-family: 'Barlow', sans-serif;
-  font-weight: 600;
+  font-family: 'Inter', sans-serif;
+  font-weight: 700;
   color: #eef2ff;
   outline: none;
   transition: border-color 0.2s;
@@ -230,9 +232,10 @@ input[type="range"]::-moz-range-thumb {
 }
 
 .tip-note {
-  font-size: 10px;
-  color: #445566;
+  font-size: 11px;
+  color: #556677;
   margin-top: 4px;
+  font-weight: 500;
 }
 
 /* Cap label */
@@ -287,18 +290,18 @@ input[type="range"]::-moz-range-thumb {
 }
 
 .rc-lbl {
-  font-size: 10px;
-  font-weight: 600;
-  letter-spacing: 0.12em;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
   text-transform: uppercase;
-  color: #445566;
+  color: #556677;
   margin-bottom: 6px;
 }
 
 .rc-val {
   font-family: 'Cinzel', serif;
-  font-size: 26px;
-  font-weight: 700;
+  font-size: 28px;
+  font-weight: 800;
   line-height: 1;
   margin-bottom: 4px;
 }
@@ -324,13 +327,14 @@ input[type="range"]::-moz-range-thumb {
 }
 
 .prog-lbl {
-  font-size: 12px;
-  color: #8899aa;
+  font-size: 13px;
+  font-weight: 600;
+  color: #99aabb;
 }
 
 .prog-val {
-  font-size: 12px;
-  font-weight: 600;
+  font-size: 13px;
+  font-weight: 800;
   color: var(--acc);
 }
 
@@ -372,11 +376,11 @@ input[type="range"]::-moz-range-thumb {
 
 .bk-title {
   font-family: 'Cinzel', serif;
-  font-size: 10px;
-  font-weight: 600;
-  letter-spacing: 0.2em;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.15em;
   text-transform: uppercase;
-  color: #556677;
+  color: #667788;
   margin-bottom: 12px;
   display: flex;
   align-items: center;
@@ -411,7 +415,8 @@ input[type="range"]::-moz-range-thumb {
 
 .bk-name {
   font-size: 13px;
-  color: #8899aa;
+  font-weight: 600;
+  color: #99aabb;
   flex: 1;
 }
 
@@ -431,8 +436,8 @@ input[type="range"]::-moz-range-thumb {
 }
 
 .bk-xp {
-  font-size: 13px;
-  font-weight: 600;
+  font-size: 14px;
+  font-weight: 800;
   color: #ccd6e0;
   min-width: 64px;
   text-align: right;
@@ -458,9 +463,10 @@ input[type="range"]::-moz-range-thumb {
 }
 
 .sub-name {
-  font-size: 11px;
-  color: #556677;
+  font-size: 12px;
+  color: #667788;
   flex: 1;
+  font-weight: 500;
 }
 
 .sub-detail {
@@ -471,8 +477,9 @@ input[type="range"]::-moz-range-thumb {
 }
 
 .sub-xp {
-  font-size: 11px;
-  color: #8899aa;
+  font-size: 12px;
+  font-weight: 700;
+  color: #99aabb;
   min-width: 64px;
   text-align: right;
 }
@@ -497,7 +504,8 @@ input[type="range"]::-moz-range-thumb {
   border: 1px solid rgba(192, 57, 43, 0.25);
   border-radius: 8px;
   padding: 9px 12px;
-  font-size: 12px;
+  font-size: 13px;
+  font-weight: 600;
   color: #e07060;
   margin-top: 10px;
 }

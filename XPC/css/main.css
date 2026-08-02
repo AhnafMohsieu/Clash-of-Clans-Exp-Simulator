@@ -10,10 +10,11 @@ html {
 }
 
 body {
-  font-family: 'Barlow', sans-serif;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
   background: linear-gradient(135deg, #0a0c14 0%, #111827 50%, #0d1117 100%);
   color: #eef2ff;
   min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
 }
 
 /* Background effects */
