@@ -121,7 +121,7 @@
 
 .ptitle {
   font-family: 'Cinzel', serif;
-  font-size: 11px;
+  font-size: 13px;
   font-weight: 700;
   letter-spacing: 0.15em;
   text-transform: uppercase;
@@ -132,7 +132,7 @@
 }
 
 .ptitle .ico {
-  font-size: 15px;
+  font-size: 17px;
 }
 
 .ptitle::after {
@@ -159,13 +159,13 @@
 }
 
 .fl-label {
-  font-size: 13px;
+  font-size: 14px;
   color: #99aabb;
   font-weight: 600;
 }
 
 .val-badge {
-  font-size: 14px;
+  font-size: 16px;
   font-weight: 800;
   padding: 2px 10px;
   border-radius: 4px;
@@ -181,7 +181,7 @@ input[type="number"] {
   border: 1px solid rgba(255, 255, 255, 0.07);
   border-radius: 7px;
   padding: 8px 12px;
-  font-size: 15px;
+  font-size: 16px;
   font-family: 'Inter', sans-serif;
   font-weight: 700;
   color: #eef2ff;
@@ -232,7 +232,7 @@ input[type="range"]::-moz-range-thumb {
 }
 
 .tip-note {
-  font-size: 11px;
+  font-size: 12px;
   color: #556677;
   margin-top: 4px;
   font-weight: 500;
@@ -243,8 +243,9 @@ input[type="range"]::-moz-range-thumb {
   display: inline-flex;
   align-items: center;
   gap: 4px;
-  font-size: 10px;
-  color: #445566;
+  font-size: 11px;
+  font-weight: 600;
+  color: #556677;
   font-family: monospace;
   background: #0d1018;
   border: 1px solid rgba(255, 255, 255, 0.05);
@@ -290,7 +291,7 @@ input[type="range"]::-moz-range-thumb {
 }
 
 .rc-lbl {
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 700;
   letter-spacing: 0.1em;
   text-transform: uppercase;
@@ -300,14 +301,15 @@ input[type="range"]::-moz-range-thumb {
 
 .rc-val {
   font-family: 'Cinzel', serif;
-  font-size: 28px;
+  font-size: 32px;
   font-weight: 800;
   line-height: 1;
   margin-bottom: 4px;
 }
 
 .rc-sub {
-  font-size: 11px;
+  font-size: 12px;
+  font-weight: 500;
   color: #8899aa;
 }
 
@@ -327,13 +329,13 @@ input[type="range"]::-moz-range-thumb {
 }
 
 .prog-lbl {
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 600;
   color: #99aabb;
 }
 
 .prog-val {
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 800;
   color: var(--acc);
 }
@@ -444,8 +446,9 @@ input[type="range"]::-moz-range-thumb {
 }
 
 .bk-pct {
-  font-size: 11px;
-  color: #445566;
+  font-size: 12px;
+  font-weight: 600;
+  color: #556677;
   min-width: 36px;
   text-align: right;
 }
@@ -470,10 +473,11 @@ input[type="range"]::-moz-range-thumb {
 }
 
 .sub-detail {
-  font-size: 10px;
-  color: #445566;
+  font-size: 11px;
+  color: #556677;
   min-width: 90px;
   text-align: right;
+  font-weight: 500;
 }
 
 .sub-xp {
@@ -504,7 +508,7 @@ input[type="range"]::-moz-range-thumb {
   border: 1px solid rgba(192, 57, 43, 0.25);
   border-radius: 8px;
   padding: 9px 12px;
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 600;
   color: #e07060;
   margin-top: 10px;
