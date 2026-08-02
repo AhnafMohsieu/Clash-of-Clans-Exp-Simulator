@@ -18,6 +18,11 @@ export function initChart(canvasId) {
     return null;
   }
   
+  if (typeof Chart === 'undefined') {
+    console.warn('Chart.js not loaded');
+    return null;
+  }
+  
   const ctx = canvas.getContext('2d');
   
   chartInstance = new Chart(ctx, {

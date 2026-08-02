@@ -52,8 +52,12 @@ function on(eventName, callback) {
 
 // Initialize Application
 export function init() {
-  // Initialize chart
-  initChart('bkChart');
+  // Initialize chart (non-critical)
+  try {
+    initChart('bkChart');
+  } catch (e) {
+    console.warn('Chart init failed:', e);
+  }
   
   // Bind event listeners
   bindInputListeners();
