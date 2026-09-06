@@ -8,6 +8,23 @@
   --h1a: #FFD700;
   --h1b: #FF8C00;
   --h1c: #FF4500;
+
+  /* Spacing + radius + type (Ibadah-style system) */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 14px;
+  --space-4: 20px;
+  --space-5: 28px;
+  --radius-sm: 7px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --font-body: 'Sora', 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-display: 'Cinzel', serif;
+  --text-xs: 11px;
+  --text-sm: 12px;
+  --text-md: 14px;
+  --text-lg: 16px;
+  --text-xl: 32px;
 }
 
 
