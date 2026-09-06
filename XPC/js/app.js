@@ -420,7 +420,7 @@ function generateBreakdownRows(xpData) {
 function generateWarnings(xpData, days) {
   var w = [];
   if (xpData.total.daily === 0) w.push('Set some daily activities to see your farming estimate.');
-  if (days > 365 * 2) w.push('Target is over 2 years away \u2014 try a closer target or increase activity.');
+  if (days !== Infinity && days > 365 * 2) w.push('Target is over 2 years away \u2014 try a closer target or increase activity.');
   return w.map(function(m) { return '<div class="warn">\u26a0\ufe0f ' + m + '</div>'; }).join('');
 }
 
@@ -462,7 +462,7 @@ function showHelpModal() {
   });
 }
 
-function closeAllModals() {}
+function closeAllModals() { closeModal(); }
 
 // ── Toast + Modal (replaces alert/prompt/confirm) ──
 function paintSliderFill(id) {
