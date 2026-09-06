@@ -636,3 +636,24 @@ input[type="range"] {
   color: #000;
   border: none;
 }
+
+.foot-hints {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px;
+  justify-content: center;
+  margin-top: 18px;
+  font-size: 12px;
+  color: #556677;
+  font-weight: 500;
+}
+
+.foot-hints kbd {
+  background: #0d1018;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 4px;
+  padding: 1px 6px;
+  font-family: inherit;
+  font-size: 11px;
+  color: #99aabb;
+}

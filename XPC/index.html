@@ -41,7 +41,7 @@
             <span class="fl-label">XP Progress in Current Level</span>
             <span class="val-badge" id="xpPctOut" style="color:#FFD700;background:rgba(255,215,0,0.08);border:1px solid rgba(255,215,0,0.2)">0%</span>
           </div>
-          <input type="range" id="xpPct" min="0" max="99" value="0" step="1">
+          <input type="range" id="xpPct" aria-label="XP progress in current level" min="0" max="99" value="0" step="1">
         </div>
         <div class="field">
           <div class="fl"><span class="fl-label">Target XP Level</span></div>
@@ -57,14 +57,14 @@
             <span class="fl-label">Multiplayer Attacks / Day</span>
             <span class="val-badge" id="atkOut" style="color:#FF6B35;background:rgba(255,107,53,0.08);border:1px solid rgba(255,107,53,0.2)">0</span>
           </div>
-          <input type="range" id="atkSlider" min="0" max="20" value="0" step="1">
+          <input type="range" id="atkSlider" aria-label="Multiplayer attacks per day" min="0" max="20" value="0" step="1">
         </div>
         <div class="field">
           <div class="fl">
             <span class="fl-label">Avg Stars per Attack</span>
             <span class="val-badge" id="starsOut" style="color:#FF6B35;background:rgba(255,107,53,0.08);border:1px solid rgba(255,107,53,0.2)">0</span>
           </div>
-          <input type="range" id="starsSlider" min="0" max="3" value="0" step="1">
+          <input type="range" id="starsSlider" aria-label="Average stars per attack" min="0" max="3" value="0" step="1">
         </div>
       </div>
     </div>
@@ -82,7 +82,7 @@
               <span class="fl-label">Troops <em style="font-size:10px;color:#445566;font-style:normal">(1 XP / space)</em></span>
               <span class="val-badge" id="troopOut" style="color:#00E5FF;background:rgba(0,229,255,0.07);border:1px solid rgba(0,229,255,0.18)">0</span>
             </div>
-            <input type="range" id="troopSlider" min="0" max="200" value="0" step="1">
+            <input type="range" id="troopSlider" aria-label="Troop housing donated per day" min="0" max="200" value="0" step="1">
             <p class="tip-note">cap: 100,000 housing spaces / day</p>
           </div>
           <div class="field" style="margin-bottom:0">
@@ -90,7 +90,7 @@
               <span class="fl-label">Spells <em style="font-size:10px;color:#445566;font-style:normal">(5 XP / space)</em></span>
               <span class="val-badge" id="spellOut" style="color:#00E5FF;background:rgba(0,229,255,0.07);border:1px solid rgba(0,229,255,0.18)">0</span>
             </div>
-            <input type="range" id="spellSlider" min="0" max="200" value="0" step="1">
+            <input type="range" id="spellSlider" aria-label="Spell housing donated per day" min="0" max="200" value="0" step="1">
             <p class="tip-note">cap: 10,000 housing spaces / day</p>
           </div>
           <div class="field" style="margin-bottom:0">
@@ -98,7 +98,7 @@
               <span class="fl-label">Siege Machines <em style="font-size:10px;color:#445566;font-style:normal">(30 XP ea)</em></span>
               <span class="val-badge" id="siegeOut" style="color:#00E5FF;background:rgba(0,229,255,0.07);border:1px solid rgba(0,229,255,0.18)">0</span>
             </div>
-            <input type="range" id="siegeSlider" min="0" max="200" value="0" step="1">
+            <input type="range" id="siegeSlider" aria-label="Siege machines donated per day" min="0" max="200" value="0" step="1">
             <p class="tip-note">cap: 1,000 siege machines / day</p>
           </div>
         </div>
@@ -115,14 +115,14 @@
             <span class="fl-label">Number of Builders</span>
             <span class="val-badge" id="bldOut" style="color:#4CAF50;background:rgba(76,175,80,0.08);border:1px solid rgba(76,175,80,0.2)">0</span>
           </div>
-          <input type="range" id="bldSlider" min="0" max="6" value="0" step="1">
+          <input type="range" id="bldSlider" aria-label="Number of builders" min="0" max="6" value="0" step="1">
         </div>
         <div class="field">
           <div class="fl">
             <span class="fl-label">Avg Upgrade Time (days)</span>
             <span class="val-badge" id="upgOut" style="color:#4CAF50;background:rgba(76,175,80,0.08);border:1px solid rgba(76,175,80,0.2)">0d</span>
           </div>
-          <input type="range" id="upgSlider" min="0" max="18" value="0" step="0.5">
+          <input type="range" id="upgSlider" aria-label="Average upgrade time in days" min="0" max="18" value="0" step="0.5">
         </div>
         <p class="tip-note">XP ≈ √(upgrade duration in seconds) per builder slot</p>
       </div>
@@ -135,21 +135,21 @@
             <span class="fl-label">War Attacks / Week</span>
             <span class="val-badge" id="warOut" style="color:#B04FFF;background:rgba(176,79,255,0.08);border:1px solid rgba(176,79,255,0.2)">0</span>
           </div>
-          <input type="range" id="warSlider" min="0" max="14" value="0" step="1">
+          <input type="range" id="warSlider" aria-label="War attacks per week" min="0" max="14" value="0" step="1">
         </div>
         <div class="field">
           <div class="fl">
             <span class="fl-label">Avg War Stars per Attack</span>
             <span class="val-badge" id="warStarsOut" style="color:#B04FFF;background:rgba(176,79,255,0.08);border:1px solid rgba(176,79,255,0.2)">0</span>
           </div>
-          <input type="range" id="warStarsSlider" min="0" max="3" value="0" step="1">
+          <input type="range" id="warStarsSlider" aria-label="Average war stars per attack" min="0" max="3" value="0" step="1">
         </div>
         <div class="field">
           <div class="fl">
             <span class="fl-label">Seasonal XP Bonus / Day</span>
             <span class="val-badge" id="seasonOut" style="color:#B04FFF;background:rgba(176,79,255,0.08);border:1px solid rgba(176,79,255,0.2)">0</span>
           </div>
-          <input type="range" id="seasonSlider" min="0" max="200" value="0" step="5">
+          <input type="range" id="seasonSlider" aria-label="Seasonal XP bonus per day" min="0" max="200" value="0" step="5">
         </div>
       </div>
     </div>
@@ -200,6 +200,13 @@
         <div style="display:flex;gap:10px;align-items:flex-start"><span style="font-size:18px;flex-shrink:0">💎</span><span style="font-size:12px;color:#8899aa;line-height:1.6">Season Pass rewards fund faster upgrades and more XP</span></div>
       </div>
     </div>
+    <!-- Shortcut hints -->
+    <footer class="foot-hints">
+      <span><kbd>Ctrl+S</kbd> save preset</span>
+      <span><kbd>Ctrl+E</kbd> export</span>
+      <span><kbd>?</kbd> shortcuts</span>
+      <span><kbd>Esc</kbd> close</span>
+    </footer>
   </div>
   
   <!-- Chart.js CDN -->

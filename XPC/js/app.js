@@ -361,6 +361,7 @@ function update() {
 }
 
 function updateDisplayValues() {
+  ['xpPct', 'atkSlider', 'starsSlider', 'troopSlider', 'spellSlider', 'siegeSlider', 'bldSlider', 'upgSlider', 'warSlider', 'warStarsSlider', 'seasonSlider'].forEach(paintSliderFill);
   var el;
   el = document.getElementById('xpPctOut'); if (el) el.textContent = state.profile.xpProgress + '%';
   el = document.getElementById('atkOut'); if (el) el.textContent = state.activity.attacks;
@@ -464,6 +465,16 @@ function showHelpModal() {
 function closeAllModals() {}
 
 // ── Toast + Modal (replaces alert/prompt/confirm) ──
+function paintSliderFill(id) {
+  var el = document.getElementById(id);
+  if (!el || el.type !== 'range') return;
+  var min = parseFloat(el.min) || 0;
+  var max = parseFloat(el.max) || 100;
+  var v = parseFloat(el.value) || 0;
+  var pct = max > min ? Math.round(((v - min) / (max - min)) * 100) : 0;
+  el.style.setProperty('--fill', pct + '%');
+}
+
 function showToast(msg) {
   var root = document.getElementById('toast-root');
   if (!root) return;
