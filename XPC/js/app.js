@@ -268,29 +268,44 @@ function bindPresetListeners() {
 }
 
 function showSavePresetModal() {
-  var name = prompt('Enter preset name:');
-  if (name) {
-    var result = savePreset(name, state);
-    if (result.success) { alert('Preset saved!'); updatePresetList(); }
-    else alert('Error: ' + result.error);
-  }
+  openModal({
+    title: 'Save Preset',
+    bodyHTML: '<input type="text" id="preset-name-input" placeholder="Preset name" maxlength="60">',
+    actions: [
+      { label: 'Cancel', onClick: function() { closeModal(); } },
+      { label: 'Save', primary: true, onClick: function(body) {
+        var input = body.querySelector('#preset-name-input');
+        var name = input ? input.value : '';
+        var result = savePreset(name, state);
+        if (result.success) { closeModal(); showToast('Preset saved!'); updatePresetList(); }
+        else showToast('Error: ' + result.error);
+      }}
+    ]
+  });
 }
 
 function loadPresetById(id) {
   var result = loadPreset(id);
   if (result.success) { Object.assign(state, result.state); updateInputsFromState(); update(); }
-  else alert('Error: ' + result.error);
+  else showToast('Error: ' + result.error);
 }
 
 function deleteCurrentPreset() {
   var select = document.getElementById('load-preset-select');
   var id = select && select.value;
-  if (!id) { alert('Select a preset to delete'); return; }
-  if (confirm('Delete this preset?')) {
-    var result = deletePreset(id);
-    if (result.success) { alert('Deleted'); updatePresetList(); }
-    else alert('Error: ' + result.error);
-  }
+  if (!id) { showToast('Select a preset to delete'); return; }
+  openModal({
+    title: 'Delete Preset',
+    bodyHTML: '<p class="tip-note">Delete this preset? This cannot be undone.</p>',
+    actions: [
+      { label: 'Cancel', onClick: function() { closeModal(); } },
+      { label: 'Delete', primary: true, onClick: function() {
+        var result = deletePreset(id);
+        if (result.success) { closeModal(); showToast('Preset deleted'); updatePresetList(); }
+        else showToast('Error: ' + result.error);
+      }}
+    ]
+  });
 }
 
 function updatePresetList() {
@@ -430,8 +445,8 @@ function importPresetsFromFile() {
     var reader = new FileReader();
     reader.onload = function(ev) {
       var result = importPresets(ev.target.result);
-      if (result.success) { alert('Imported ' + result.imported + ' presets'); updatePresetList(); }
-      else alert('Import failed: ' + result.error);
+      if (result.success) { showToast('Imported ' + result.imported + ' presets'); updatePresetList(); }
+      else showToast('Import failed: ' + result.error);
     };
     reader.readAsText(file);
   };
@@ -439,10 +454,64 @@ function importPresetsFromFile() {
 }
 
 function showHelpModal() {
-  alert('Keyboard Shortcuts:\n\nCtrl+S: Save preset\nCtrl+E: Export results\n?: Show this help\nEsc: Close modals');
+  openModal({
+    title: 'Keyboard Shortcuts',
+    bodyHTML: '<p class="tip-note">Ctrl+S: Save preset<br>Ctrl+E: Export results<br>?: Show this help<br>Esc: Close</p>',
+    actions: [{ label: 'Close', primary: true, onClick: function() { closeModal(); } }]
+  });
 }
 
 function closeAllModals() {}
+
+// ── Toast + Modal (replaces alert/prompt/confirm) ──
+function showToast(msg) {
+  var root = document.getElementById('toast-root');
+  if (!root) return;
+  var el = document.createElement('div');
+  el.className = 'toast';
+  el.textContent = msg;
+  root.appendChild(el);
+  setTimeout(function() { el.remove(); }, 3000);
+}
+
+function openModal(opts) {
+  closeModal();
+  var root = document.getElementById('modal-root');
+  if (!root) return null;
+  var overlay = document.createElement('div');
+  overlay.className = 'modal-overlay';
+  overlay.addEventListener('click', function(e) { if (e.target === overlay) closeModal(); });
+  var box = document.createElement('div');
+  box.className = 'modal';
+  box.setAttribute('role', 'dialog');
+  box.setAttribute('aria-modal', 'true');
+  var h = document.createElement('h2');
+  h.textContent = opts.title;
+  box.appendChild(h);
+  var body = document.createElement('div');
+  body.innerHTML = opts.bodyHTML || '';
+  box.appendChild(body);
+  var row = document.createElement('div');
+  row.className = 'modal-actions';
+  (opts.actions || []).forEach(function(a) {
+    var b = document.createElement('button');
+    b.textContent = a.label;
+    if (a.primary) b.className = 'primary';
+    b.addEventListener('click', function() { if (a.onClick) a.onClick(body); });
+    row.appendChild(b);
+  });
+  box.appendChild(row);
+  overlay.appendChild(box);
+  root.appendChild(overlay);
+  var input = box.querySelector('input');
+  if (input) input.focus();
+  return box;
+}
+
+function closeModal() {
+  var root = document.getElementById('modal-root');
+  if (root) root.innerHTML = '';
+}
 
 // ── Boot ──
 if (document.readyState === 'loading') {
