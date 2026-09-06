@@ -99,9 +99,13 @@ XPC/
 - Vanilla HTML + CSS + JS, no framework, no build step
 - [Chart.js 4.4.1](https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js) via CDN (optional — app runs without it)
 - Fonts: Inter + Cinzel via Google Fonts (optional — falls back to system fonts offline)
+- PWA: `manifest.json` + `sw.js` (cache `coc-xp-v1`) + `offline.html` — installable when served over HTTP; `file://` use unaffected
+- Design tokens in `XPC/css/themes.css` (`--space-*`, `--radius-*`, `--font-body`, `--text-*`)
 
 ## Limitations
 
 - XP rates/level curve are approximations for planning — verify against in-game values for your Town Hall / Clan Perks / events.
 - Donation caps noted in the UI (100k troop spaces, 10k spell spaces, 1k sieges/day) are display hints, not enforced.
 - Presets live in the browser that saved them — use Export/Import to move them between devices.
+- Service worker requires HTTP(S) — it is skipped automatically on `file://`.
+- Sora/Chart.js load from CDN with system-font/no-chart fallback offline.
