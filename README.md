@@ -1,5 +1,7 @@
 # Clash of Clans — XP Farming Simulator
 
+▶️ **Play it live:** https://ahnafmohsieu.github.io/Clash-of-Clans-XP-Simulator/
+
 A static, no-build web app that calculates exactly how long it takes to reach your target XP level in Clash of Clans based on your daily activity.
 
 Open `XPC/index.html` and drag the sliders — it instantly shows XP needed, daily XP, time to target, and a per-source breakdown with a bar chart.
