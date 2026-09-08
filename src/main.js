@@ -3,6 +3,7 @@ import { calculateXP, totalNeeded, xpForLevel } from './lib/xp-calculator.js';
 import { getDefaultState, applyInput, collectParams } from './lib/state.js';
 import { fmtK, loc } from './lib/utils.js';
 import { formatDuration, breakdownPct, warnings, daysToTarget } from './lib/results.js';
+import { getPresets, savePreset, loadPreset, deletePreset, exportPresets, importPresets } from './lib/presets.js';
 import { updateChart, ensureChart } from './lib/chart.js';
 import { shouldCelebrate, tweenFrames, shareCardText } from './lib/juice.js';
 
@@ -374,9 +375,196 @@ export function update() {
   return { xpData, needed };
 }
 
+// ── Preset UI ──
+function bindPresetListeners() {
+  const saveBtn = document.getElementById('save-preset-btn');
+  if (saveBtn) saveBtn.addEventListener('click', showSavePresetModal);
+  const loadSelect = document.getElementById('load-preset-select');
+  if (loadSelect) loadSelect.addEventListener('change', (e) => { if (e.target.value) loadPresetById(e.target.value); });
+  const deleteBtn = document.getElementById('delete-preset-btn');
+  if (deleteBtn) deleteBtn.addEventListener('click', deleteCurrentPreset);
+  const exportBtn = document.getElementById('export-presets-btn');
+  if (exportBtn) exportBtn.addEventListener('click', exportAllPresets);
+  const importBtn = document.getElementById('import-presets-btn');
+  if (importBtn) importBtn.addEventListener('click', importPresetsFromFile);
+  updatePresetList();
+}
+
+function showSavePresetModal() {
+  openModal({
+    title: 'Save Preset',
+    bodyHTML: '<input type="text" id="preset-name-input" placeholder="Preset name" maxlength="60">',
+    actions: [
+      { label: 'Cancel', onClick: () => { closeModal(); } },
+      { label: 'Save', primary: true, onClick: (body) => {
+        const input = body.querySelector('#preset-name-input');
+        const name = input ? input.value : '';
+        const result = savePreset(name, state);
+        if (result.success) { closeModal(); showToast('Preset saved!'); updatePresetList(); }
+        else showToast('Error: ' + result.error);
+      } }
+    ]
+  });
+}
+
+function loadPresetById(id) {
+  const result = loadPreset(id);
+  if (result.success) { Object.assign(state, result.state); updateInputsFromState(); update(); }
+  else showToast('Error: ' + result.error);
+}
+
+function deleteCurrentPreset() {
+  const select = document.getElementById('load-preset-select');
+  const id = select && select.value;
+  if (!id) { showToast('Select a preset to delete'); return; }
+  openModal({
+    title: 'Delete Preset',
+    bodyHTML: '<p class="tip-note">Delete this preset? This cannot be undone.</p>',
+    actions: [
+      { label: 'Cancel', onClick: () => { closeModal(); } },
+      { label: 'Delete', primary: true, onClick: () => {
+        const result = deletePreset(id);
+        if (result.success) { closeModal(); showToast('Preset deleted'); updatePresetList(); }
+        else showToast('Error: ' + result.error);
+      } }
+    ]
+  });
+}
+
+function updatePresetList() {
+  const select = document.getElementById('load-preset-select');
+  if (!select) return;
+  const presets = getPresets();
+  select.innerHTML = '<option value="">Select a preset...</option>';
+  presets.forEach((p) => {
+    const opt = document.createElement('option');
+    opt.value = p.id; opt.textContent = p.name;
+    select.appendChild(opt);
+  });
+}
+
+function updateInputsFromState() {
+  let el;
+  el = document.getElementById('curLvl'); if (el) el.value = state.profile.currentLevel;
+  el = document.getElementById('xpPct'); if (el) el.value = state.profile.xpProgress;
+  el = document.getElementById('tgtLvl'); if (el) el.value = state.profile.targetLevel;
+  el = document.getElementById('atkSlider'); if (el) el.value = state.activity.attacks;
+  el = document.getElementById('starsSlider'); if (el) el.value = state.activity.stars;
+  el = document.getElementById('troopSlider'); if (el) el.value = state.donations.troops;
+  el = document.getElementById('spellSlider'); if (el) el.value = state.donations.spells;
+  el = document.getElementById('siegeSlider'); if (el) el.value = state.donations.siege;
+  el = document.getElementById('bldSlider'); if (el) el.value = state.builders.count;
+  el = document.getElementById('upgSlider'); if (el) el.value = state.builders.upgradeTime;
+  el = document.getElementById('warSlider'); if (el) el.value = state.war.attacks;
+  el = document.getElementById('warStarsSlider'); if (el) el.value = state.war.stars;
+  el = document.getElementById('seasonSlider'); if (el) el.value = state.war.seasonalBonus;
+}
+
+// ── Keyboard Shortcuts ──
+function bindKeyboardShortcuts() {
+  document.addEventListener('keydown', (e) => {
+    if (e.ctrlKey && e.key === 's') { e.preventDefault(); showSavePresetModal(); }
+    if (e.ctrlKey && e.key === 'e') { e.preventDefault(); exportResults(); }
+    if (e.key === '?' && !e.ctrlKey && !e.altKey) showHelpModal();
+    if (e.key === 'Escape') closeAllModals();
+  });
+}
+
+// ── Export / Import ──
+function exportResults() {
+  const blob = new Blob([JSON.stringify({ state, timestamp: new Date().toISOString() }, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a'); a.href = url; a.download = 'xp-simulator-results-' + Date.now() + '.json'; a.click();
+  URL.revokeObjectURL(url);
+}
+
+function exportAllPresets() {
+  const blob = new Blob([exportPresets()], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a'); a.href = url; a.download = 'xp-simulator-presets-' + Date.now() + '.json'; a.click();
+  URL.revokeObjectURL(url);
+}
+
+function importPresetsFromFile() {
+  const input = document.createElement('input'); input.type = 'file'; input.accept = '.json';
+  input.onchange = (e) => {
+    const file = e.target.files[0]; if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      const result = importPresets(ev.target.result);
+      if (result.success) { showToast('Imported ' + result.imported + ' presets'); updatePresetList(); }
+      else showToast('Import failed: ' + result.error);
+    };
+    reader.readAsText(file);
+  };
+  input.click();
+}
+
+function showHelpModal() {
+  openModal({
+    title: 'Keyboard Shortcuts',
+    bodyHTML: '<p class="tip-note">Ctrl+S: Save preset<br>Ctrl+E: Export results<br>?: Show this help<br>Esc: Close</p>',
+    actions: [{ label: 'Close', primary: true, onClick: () => { closeModal(); } }]
+  });
+}
+
+function closeAllModals() { closeModal(); }
+
+// ── Toast + Modal (replaces alert/prompt/confirm) ──
+function showToast(msg) {
+  const root = document.getElementById('toast-root');
+  if (!root) return;
+  const el = document.createElement('div');
+  el.className = 'toast';
+  el.textContent = msg;
+  root.appendChild(el);
+  setTimeout(() => { el.remove(); }, 3000);
+}
+
+function openModal(opts) {
+  closeModal();
+  const root = document.getElementById('modal-root');
+  if (!root) return null;
+  const overlay = document.createElement('div');
+  overlay.className = 'modal-overlay';
+  overlay.addEventListener('click', (e) => { if (e.target === overlay) closeModal(); });
+  const box = document.createElement('div');
+  box.className = 'modal';
+  box.setAttribute('role', 'dialog');
+  box.setAttribute('aria-modal', 'true');
+  const h = document.createElement('h2');
+  h.textContent = opts.title;
+  box.appendChild(h);
+  const body = document.createElement('div');
+  body.innerHTML = opts.bodyHTML || '';
+  box.appendChild(body);
+  const row = document.createElement('div');
+  row.className = 'modal-actions';
+  (opts.actions || []).forEach((a) => {
+    const b = document.createElement('button');
+    b.textContent = a.label;
+    if (a.primary) b.className = 'primary';
+    b.addEventListener('click', () => { if (a.onClick) a.onClick(body); });
+    row.appendChild(b);
+  });
+  box.appendChild(row);
+  overlay.appendChild(box);
+  root.appendChild(overlay);
+  const input = box.querySelector('input');
+  if (input) input.focus();
+  return box;
+}
+
+function closeModal() {
+  const root = document.getElementById('modal-root');
+  if (root) root.innerHTML = '';
+}
+
 setupChartToggle();
 setupJuiceControls();
 setupCelebrate();
+bindPresetListeners();
+bindKeyboardShortcuts();
 
 IDS.forEach((id) => {
   const el = document.getElementById(id);
