@@ -4,12 +4,224 @@ import { getDefaultState, applyInput, collectParams } from './lib/state.js';
 import { fmtK, loc } from './lib/utils.js';
 import { formatDuration, breakdownPct, warnings, daysToTarget } from './lib/results.js';
 import { updateChart, ensureChart } from './lib/chart.js';
+import { shouldCelebrate, tweenFrames, shareCardText } from './lib/juice.js';
 
 const state = getDefaultState();
 const IDS = ['curLvl','xpPct','tgtLvl','atkSlider','starsSlider','troopSlider','spellSlider','siegeSlider','bldSlider','upgSlider','warSlider','warStarsSlider','seasonSlider'];
 
 let latestXpData = null;
 let chartOpen = typeof matchMedia === 'function' ? matchMedia('(min-width: 640px)').matches : true;
+
+// --- Juice (Task 6): all motion/sound gated on motionOK ---
+const motionOK = typeof matchMedia === 'function' ? !matchMedia('(prefers-reduced-motion: reduce)').matches : true;
+let lastNeeded = null;
+let celebratePrev = null;
+let soundOn = false;
+try { soundOn = localStorage.getItem('xp-simulator-sound') === 'on'; } catch (e) { /* storage optional */ }
+
+function fmtNeeded(n) {
+  return n >= 1000 ? fmtK(n) : loc(n);
+}
+
+function tweenXpNeeded(el, from, to) {
+  if (!motionOK || !el || from === to) return;
+  const frames = tweenFrames(from, to);
+  const stepMs = 200 / frames.length;
+  let i = 0;
+  let raf = 0;
+  const tick = () => {
+    if (i < frames.length) {
+      el.textContent = fmtNeeded(frames[i]);
+      i += 1;
+      raf = requestAnimationFrame(() => setTimeout(tick, stepMs));
+    }
+  };
+  cancelAnimationFrame(raf);
+  tick();
+}
+
+function fireConfetti() {
+  if (!motionOK) return;
+  const canvas = document.createElement('canvas');
+  const N = 60;
+  canvas.style.cssText = 'position:fixed;inset:0;width:100vw;height:100vh;pointer-events:none;z-index:9999;';
+  document.body.appendChild(canvas);
+  const ctx = canvas.getContext('2d');
+  if (!ctx) { canvas.remove(); return; }
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
+  const colors = ['#FFD700', '#FFF066', '#2E86DE', '#00E5FF', '#27AE60', '#E04040', '#B04FFF'];
+  const parts = Array.from({ length: N }, () => ({
+    x: window.innerWidth / 2 + (Math.random() - 0.5) * 240,
+    y: window.innerHeight * 0.35,
+    vx: (Math.random() - 0.5) * 12,
+    vy: Math.random() * -9 - 2,
+    s: Math.random() * 7 + 3,
+    r: Math.random() * Math.PI,
+    vr: (Math.random() - 0.5) * 0.3,
+    c: colors[Math.floor(Math.random() * colors.length)],
+    life: 1
+  }));
+  const start = performance.now();
+  const DURATION = 1100;
+  const frame = (now) => {
+    const t = now - start;
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    parts.forEach((p) => {
+      p.x += p.vx;
+      p.y += p.vy;
+      p.vy += 0.35;
+      p.r += p.vr;
+      p.life = 1 - t / DURATION;
+      ctx.save();
+      ctx.globalAlpha = Math.max(p.life, 0);
+      ctx.translate(p.x, p.y);
+      ctx.rotate(p.r);
+      ctx.fillStyle = p.c;
+      ctx.fillRect(-p.s / 2, -p.s / 2, p.s, p.s * 0.6);
+      ctx.restore();
+    });
+    if (t < DURATION) {
+      requestAnimationFrame(frame);
+    } else {
+      canvas.remove();
+    }
+  };
+  requestAnimationFrame(frame);
+}
+
+function playFanfare() {
+  if (!motionOK || !soundOn) return;
+  try {
+    const AC = window.AudioContext || window.webkitAudioContext;
+    if (!AC) return;
+    const ctx = new AC();
+    const notes = [523.25, 783.99];
+    notes.forEach((freq, idx) => {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      const t0 = ctx.currentTime + idx * 0.14;
+      osc.type = 'triangle';
+      osc.frequency.value = freq;
+      gain.gain.setValueAtTime(0.0001, t0);
+      gain.gain.exponentialRampToValueAtTime(0.2, t0 + 0.02);
+      gain.gain.exponentialRampToValueAtTime(0.0001, t0 + 0.22);
+      osc.connect(gain).connect(ctx.destination);
+      osc.start(t0);
+      osc.stop(t0 + 0.25);
+    });
+    setTimeout(() => { try { ctx.close(); } catch (e) { /* noop */ } }, 600);
+  } catch (e) { /* audio optional */ }
+}
+
+function buzz() {
+  if (!motionOK) return;
+  try {
+    if (typeof navigator !== 'undefined' && typeof navigator.vibrate === 'function') navigator.vibrate(20);
+  } catch (e) { /* noop */ }
+}
+
+function persistSound() {
+  try { localStorage.setItem('xp-simulator-sound', soundOn ? 'on' : 'off'); } catch (e) { /* noop */ }
+}
+
+function shareCard() {
+  const xpData = latestXpData || calculateXP(collectParams(state));
+  const needed = totalNeeded(state.profile.currentLevel, state.profile.xpProgress, state.profile.targetLevel);
+  const days = daysToTarget(needed, xpData.total.daily);
+  const caption = shareCardText(state.profile.currentLevel, state.profile.targetLevel, days);
+  const S = 1080;
+  const canvas = document.createElement('canvas');
+  canvas.width = S;
+  canvas.height = S;
+  const ctx = canvas.getContext('2d');
+  if (!ctx) return;
+  ctx.fillStyle = '#0a0c14';
+  ctx.fillRect(0, 0, S, S);
+  ctx.strokeStyle = '#FFD700';
+  ctx.lineWidth = 12;
+  ctx.strokeRect(36, 36, S - 72, S - 72);
+  ctx.textAlign = 'center';
+  ctx.fillStyle = '#FFD700';
+  ctx.font = '800 84px Sora, Inter, sans-serif';
+  ctx.fillText('CoC XP SIMULATOR', S / 2, 300);
+  ctx.fillStyle = '#ffffff';
+  ctx.font = '700 72px Sora, Inter, sans-serif';
+  const lines = [caption];
+  lines.forEach((line, i) => ctx.fillText(line, S / 2, 520 + i * 100));
+  ctx.fillStyle = '#8899aa';
+  ctx.font = '500 44px Inter, sans-serif';
+  ctx.fillText(days === Infinity ? 'Keep grinding, Chief!' : 'Keep grinding, Chief!', S / 2, 780);
+  const done = (blob) => {
+    if (!blob) return;
+    const file = typeof File !== 'undefined' ? new File([blob], 'coc-xp-share.png', { type: 'image/png' }) : null;
+    if (file && typeof navigator !== 'undefined' && typeof navigator.share === 'function') {
+      try {
+        const p = navigator.share({ files: [file], title: 'CoC XP Simulator', text: caption });
+        if (p && typeof p.catch === 'function') p.catch(() => downloadBlob(blob));
+        return;
+      } catch (e) { /* fall through to download */ }
+    }
+    downloadBlob(blob);
+  };
+  const downloadBlob = (blob) => {
+    try {
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'coc-xp-share.png';
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 2000);
+    } catch (e) { /* noop */ }
+  };
+  if (canvas.toBlob) canvas.toBlob(done, 'image/png');
+}
+
+function setupJuiceControls() {
+  const sheet = document.getElementById('results-sheet');
+  if (!sheet) return;
+  let soundBtn = document.getElementById('sound-toggle');
+  if (!soundBtn) {
+    soundBtn = document.createElement('button');
+    soundBtn.id = 'sound-toggle';
+    soundBtn.type = 'button';
+    sheet.appendChild(soundBtn);
+  }
+  const paintSound = () => {
+    soundBtn.textContent = soundOn ? '🔊 Sound On' : '🔇 Sound Off';
+    soundBtn.setAttribute('aria-pressed', String(soundOn));
+  };
+  paintSound();
+  soundBtn.onclick = () => { soundOn = !soundOn; persistSound(); paintSound(); };
+  let shareBtn = document.getElementById('share-btn');
+  if (!shareBtn) {
+    shareBtn = document.createElement('button');
+    shareBtn.id = 'share-btn';
+    shareBtn.type = 'button';
+    shareBtn.textContent = 'Share Result';
+    sheet.appendChild(shareBtn);
+  }
+  shareBtn.onclick = shareCard;
+}
+
+function setupCelebrate() {
+  const ranges = document.querySelectorAll('input[type="range"]');
+  ranges.forEach((el) => {
+    el.addEventListener('change', () => {
+      const before = celebratePrev;
+      const res = update();
+      const after = daysToTarget(res.needed, res.xpData.total.daily);
+      celebratePrev = after;
+      if (before !== null && shouldCelebrate(before, after, motionOK)) {
+        fireConfetti();
+        playFanfare();
+        buzz();
+      }
+    });
+  });
+}
 
 function setText(id, text) {
   const el = document.getElementById(id);
@@ -138,11 +350,22 @@ export function update() {
   const xpData = calculateXP(collectParams(state));
   const needed = totalNeeded(state.profile.currentLevel, state.profile.xpProgress, state.profile.targetLevel);
   latestXpData = xpData;
+  const prevNeeded = lastNeeded;
   renderAll(xpData, needed);
+  if (motionOK && prevNeeded !== null && prevNeeded !== needed) {
+    const el = document.querySelector('#results .rcard .rc-val');
+    if (el) tweenXpNeeded(el, prevNeeded, needed);
+  }
+  lastNeeded = needed;
+  if (celebratePrev === null) {
+    celebratePrev = daysToTarget(needed, xpData.total.daily);
+  }
   return { xpData, needed };
 }
 
 setupChartToggle();
+setupJuiceControls();
+setupCelebrate();
 
 IDS.forEach((id) => {
   const el = document.getElementById(id);
