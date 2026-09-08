@@ -463,8 +463,11 @@ function updateInputsFromState() {
 // ── Keyboard Shortcuts ──
 function bindKeyboardShortcuts() {
   document.addEventListener('keydown', (e) => {
-    if (e.ctrlKey && e.key === 's') { e.preventDefault(); showSavePresetModal(); }
-    if (e.ctrlKey && e.key === 'e') { e.preventDefault(); exportResults(); }
+    const t = e.target;
+    if (t && (t.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName))) return;
+    const key = typeof e.key === 'string' ? e.key.toLowerCase() : e.key;
+    if (e.ctrlKey && key === 's') { e.preventDefault(); showSavePresetModal(); }
+    if (e.ctrlKey && key === 'e') { e.preventDefault(); exportResults(); }
     if (e.key === '?' && !e.ctrlKey && !e.altKey) showHelpModal();
     if (e.key === 'Escape') closeAllModals();
   });
