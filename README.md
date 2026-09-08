@@ -35,7 +35,7 @@ Option 2 — serve it locally (needed only if you want to use the modular `xp-ca
 
 ```powershell
 # from the repo root
-npx serve "New folder"
+npx serve .
 # or
 python -m http.server 8000
 ```
