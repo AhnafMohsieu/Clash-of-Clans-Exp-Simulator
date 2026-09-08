@@ -1,23 +1,193 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="gold">
 <head>
   <meta charset="UTF-8">
-  <meta http-equiv="refresh" content="0; url=XPC/index.html">
-  <link rel="canonical" href="XPC/index.html">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="theme-color" content="#FFD700">
   <title>CoC XP Farming Simulator</title>
-  <style>
-    body { background: #0a0c14; color: #eef2ff; font-family: system-ui, sans-serif; display: flex; align-items: center; justify-content: center; min-height: 100vh; margin: 0; text-align: center; }
-    h1 { color: #FFD700; font-size: 20px; }
-    a { color: #FFD700; }
-  </style>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700;800&family=Cinzel:wght@600;700;800&display=swap" rel="stylesheet">
+  <meta name="theme-color" content="#FFD700">
 </head>
 <body>
-  <main>
-    <h1>⚔️ CoC XP Farming Simulator</h1>
-    <p>Redirecting to the app… <a href="XPC/index.html">Open the simulator</a></p>
+  <header id="hud" class="sticky top-0 z-40 border-b-2 border-[rgba(255,215,0,0.35)] bg-[#0d1220]/95 backdrop-blur">
+    <div class="mx-auto flex max-w-5xl items-center gap-4 px-4 py-3">
+      <div class="flex items-center gap-3">
+        <span aria-hidden="true" class="text-2xl">⚔️</span>
+        <div>
+          <p class="font-display text-sm font-bold tracking-wide text-[#FFD700]">XP Farming Simulator</p>
+          <p id="hud-level" class="text-xs text-[#8899aa]">Level 1</p>
+        </div>
+      </div>
+      <div class="min-w-0 flex-1">
+        <div class="h-3 overflow-hidden rounded-full bg-[#1a2233]" role="progressbar" aria-label="XP progress to target level" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
+          <div id="hud-xp-fill" class="h-full rounded-full bg-[#FFD700]" style="width:0%"></div>
+        </div>
+        <div class="mt-1 flex items-center justify-between text-[11px] text-[#8899aa]">
+          <span id="hud-xp-label">0 XP to go</span>
+          <span id="hud-days">— days</span>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main id="app" class="mx-auto max-w-5xl space-y-4 px-4 py-6">
+    <!-- Profile -->
+    <div class="panel p-5" id="c-profile">
+      <p class="font-display font-bold text-[#AA8800]"><span aria-hidden="true">🛡️</span> Your Profile</p>
+      <div class="field">
+        <div class="fl"><span class="fl-label">Current XP Level</span></div>
+        <input type="number" id="curLvl" min="1" max="499" value="1">
+      </div>
+      <div class="field">
+        <div class="fl">
+          <span class="fl-label">XP Progress in Current Level</span>
+          <span class="val-badge" id="xpPctOut">0%</span>
+        </div>
+        <input type="range" id="xpPct" aria-label="XP progress in current level" min="0" max="99" value="0" step="1">
+      </div>
+      <div class="field">
+        <div class="fl"><span class="fl-label">Target XP Level</span></div>
+        <input type="number" id="tgtLvl" min="2" max="500" value="2">
+      </div>
+    </div>
+
+    <!-- Activity -->
+    <div class="panel p-5" id="c-activity">
+      <p class="font-display font-bold text-[#CC4411]"><span aria-hidden="true">⚔️</span> Daily Activity</p>
+      <div class="field">
+        <div class="fl">
+          <span class="fl-label">Multiplayer Attacks / Day</span>
+          <span class="val-badge" id="atkOut">0</span>
+        </div>
+        <input type="range" id="atkSlider" aria-label="Multiplayer attacks per day" min="0" max="20" value="0" step="1">
+      </div>
+      <div class="field">
+        <div class="fl">
+          <span class="fl-label">Avg Stars per Attack</span>
+          <span class="val-badge" id="starsOut">0</span>
+        </div>
+        <input type="range" id="starsSlider" aria-label="Average stars per attack" min="0" max="3" value="0" step="1">
+      </div>
+    </div>
+
+    <!-- Donations -->
+    <div class="panel p-5">
+      <p class="font-display font-bold text-[#008899]"><span aria-hidden="true">🤝</span> Daily Donations</p>
+      <div class="field">
+        <div class="fl">
+          <span class="fl-label">Troops <em>(1 XP / space)</em></span>
+          <span class="val-badge" id="troopOut">0</span>
+        </div>
+        <input type="range" id="troopSlider" aria-label="Troop housing donated per day" min="0" max="200" value="0" step="1">
+        <p class="tip-note">cap: 100,000 housing spaces / day</p>
+      </div>
+      <div class="field">
+        <div class="fl">
+          <span class="fl-label">Spells <em>(5 XP / space)</em></span>
+          <span class="val-badge" id="spellOut">0</span>
+        </div>
+        <input type="range" id="spellSlider" aria-label="Spell housing donated per day" min="0" max="200" value="0" step="1">
+        <p class="tip-note">cap: 10,000 housing spaces / day</p>
+      </div>
+      <div class="field">
+        <div class="fl">
+          <span class="fl-label">Siege Machines <em>(30 XP ea)</em></span>
+          <span class="val-badge" id="siegeOut">0</span>
+        </div>
+        <input type="range" id="siegeSlider" aria-label="Siege machines donated per day" min="0" max="200" value="0" step="1">
+        <p class="tip-note">cap: 1,000 siege machines / day</p>
+      </div>
+    </div>
+
+    <!-- Builders -->
+    <div class="panel p-5">
+      <p class="font-display font-bold text-[#2E7D32]"><span aria-hidden="true">🏗️</span> Builders</p>
+      <div class="field">
+        <div class="fl">
+          <span class="fl-label">Number of Builders</span>
+          <span class="val-badge" id="bldOut">0</span>
+        </div>
+        <input type="range" id="bldSlider" aria-label="Number of builders" min="0" max="6" value="0" step="1">
+      </div>
+      <div class="field">
+        <div class="fl">
+          <span class="fl-label">Avg Upgrade Time (days)</span>
+          <span class="val-badge" id="upgOut">0d</span>
+        </div>
+        <input type="range" id="upgSlider" aria-label="Average upgrade time in days" min="0" max="18" value="0" step="0.5">
+      </div>
+      <p class="tip-note">XP ≈ √(upgrade duration in seconds) per builder slot</p>
+    </div>
+
+    <!-- War & Events -->
+    <div class="panel p-5">
+      <p class="font-display font-bold text-[#6A1B9A]"><span aria-hidden="true">🏰</span> Clan War &amp; Events</p>
+      <div class="field">
+        <div class="fl">
+          <span class="fl-label">War Attacks / Week</span>
+          <span class="val-badge" id="warOut">0</span>
+        </div>
+        <input type="range" id="warSlider" aria-label="War attacks per week" min="0" max="14" value="0" step="1">
+      </div>
+      <div class="field">
+        <div class="fl">
+          <span class="fl-label">Avg War Stars per Attack</span>
+          <span class="val-badge" id="warStarsOut">0</span>
+        </div>
+        <input type="range" id="warStarsSlider" aria-label="Average war stars per attack" min="0" max="3" value="0" step="1">
+      </div>
+      <div class="field">
+        <div class="fl">
+          <span class="fl-label">Seasonal XP Bonus / Day</span>
+          <span class="val-badge" id="seasonOut">0</span>
+        </div>
+        <input type="range" id="seasonSlider" aria-label="Seasonal XP bonus per day" min="0" max="200" value="0" step="5">
+      </div>
+    </div>
+
+    <!-- Presets -->
+    <div class="panel p-5">
+      <p class="font-display font-bold text-[#8899aa]"><span aria-hidden="true">💾</span> Presets</p>
+      <div>
+        <button id="save-preset-btn" type="button">Save Current</button>
+        <select id="load-preset-select">
+          <option value="">Select a preset...</option>
+        </select>
+        <button id="delete-preset-btn" type="button">Delete</button>
+        <button id="export-presets-btn" type="button">Export All</button>
+        <button id="import-presets-btn" type="button">Import</button>
+      </div>
+    </div>
+
+    <!-- Results -->
+    <section id="results-sheet" class="panel p-5">
+      <div id="results"></div>
+      <canvas id="bkChart"></canvas>
+    </section>
+
+    <!-- Commander Tips -->
+    <div class="panel p-5">
+      <div class="text-[10px] font-bold uppercase tracking-[.25em] text-[#FFD700]">⚡ Commander Tips</div>
+      <div>
+        <div><span aria-hidden="true">🔨</span><span>Never let builders sit idle — even a cheap 1-hour upgrade gives XP</span></div>
+        <div><span aria-hidden="true">🛡️</span><span>Clan War attacks double as XP + loot — never skip them</span></div>
+        <div><span aria-hidden="true">💎</span><span>Season Pass rewards fund faster upgrades and more XP</span></div>
+      </div>
+    </div>
+
+    <!-- Shortcut footer -->
+    <footer class="foot-hints text-center text-xs text-[#8899aa]">
+      <span><kbd>Ctrl+S</kbd> save preset</span>
+      <span><kbd>Ctrl+E</kbd> export</span>
+      <span><kbd>?</kbd> shortcuts</span>
+      <span><kbd>Esc</kbd> close</span>
+    </footer>
   </main>
-  <script>location.replace('XPC/index.html');</script>
+
+  <div id="toast-root" aria-live="polite"></div>
+  <div id="modal-root"></div>
+
+  <script type="module" src="/src/main.js"></script>
 </body>
 </html>
