@@ -23,20 +23,31 @@ function fmtNeeded(n) {
   return n >= 1000 ? fmtK(n) : loc(n);
 }
 
+let tweenRaf = 0;
+let tweenTimer = 0;
+let tweenToken = 0;
+
 function tweenXpNeeded(el, from, to) {
+  tweenToken += 1;
+  const mine = tweenToken;
+  if (tweenRaf) cancelAnimationFrame(tweenRaf);
+  if (tweenTimer) clearTimeout(tweenTimer);
+  tweenRaf = 0;
+  tweenTimer = 0;
   if (!motionOK || !el || from === to) return;
   const frames = tweenFrames(from, to);
   const stepMs = 200 / frames.length;
   let i = 0;
-  let raf = 0;
   const tick = () => {
+    if (mine !== tweenToken) return;
     if (i < frames.length) {
       el.textContent = fmtNeeded(frames[i]);
       i += 1;
-      raf = requestAnimationFrame(() => setTimeout(tick, stepMs));
+      tweenRaf = requestAnimationFrame(() => {
+        tweenTimer = setTimeout(tick, stepMs);
+      });
     }
   };
-  cancelAnimationFrame(raf);
   tick();
 }
 
@@ -151,7 +162,7 @@ function shareCard() {
   lines.forEach((line, i) => ctx.fillText(line, S / 2, 520 + i * 100));
   ctx.fillStyle = '#8899aa';
   ctx.font = '500 44px Inter, sans-serif';
-  ctx.fillText(days === Infinity ? 'Keep grinding, Chief!' : 'Keep grinding, Chief!', S / 2, 780);
+  ctx.fillText('Keep grinding, Chief!', S / 2, 780);
   const done = (blob) => {
     if (!blob) return;
     const file = typeof File !== 'undefined' ? new File([blob], 'coc-xp-share.png', { type: 'image/png' }) : null;
@@ -190,7 +201,7 @@ function setupJuiceControls() {
     sheet.appendChild(soundBtn);
   }
   const paintSound = () => {
-    soundBtn.textContent = soundOn ? '🔊 Sound On' : '🔇 Sound Off';
+    soundBtn.textContent = soundOn ? 'Sound On' : 'Sound Off';
     soundBtn.setAttribute('aria-pressed', String(soundOn));
   };
   paintSound();
