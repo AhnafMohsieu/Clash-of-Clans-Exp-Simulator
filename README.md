@@ -2,9 +2,9 @@
 
 ▶️ **Play it live:** https://ahnafmohsieu.github.io/Clash-of-Clans-XP-Simulator/
 
-A static, no-build web app that calculates exactly how long it takes to reach your target XP level in Clash of Clans based on your daily activity.
+A Vite-built, phone-first web app that calculates exactly how long it takes to reach your target XP level in Clash of Clans based on your daily activity.
 
-Open `XPC/index.html` and drag the sliders — it instantly shows XP needed, daily XP, time to target, and a per-source breakdown with a bar chart.
+Drag the sliders — it instantly shows XP needed, daily XP, time to target, and a per-source breakdown with a bar chart.
 
 > Fan-made planning tool. Not affiliated with or endorsed by Supercell.
 
@@ -19,32 +19,28 @@ Open `XPC/index.html` and drag the sliders — it instantly shows XP needed, dai
 - **Chart** — daily XP per source (Chart.js bar chart, degrades gracefully offline)
 - **Presets** — save / load / delete named setups in `localStorage`, export / import as JSON
 - **Keyboard shortcuts** — `Ctrl+S` save preset, `Ctrl+E` export results, `?` help, `Esc` close
-- **Works from `file://`** — the shipped `XPC/js/app.js` is a single bundled file (no ES modules), so double-clicking `index.html` works without a server
+- **Phone-first HUD** — sticky XP bar, results bottom sheet, confetti on progress, share-card export
 
 ## Getting started
 
-No install, no build.
-
-Option 1 — just open it:
-
-```text
-XPC/index.html
+```bash
+npm install
+npm run dev
 ```
 
-Option 2 — serve it locally (needed only if you want to use the modular `xp-calculator.js` / `utils.js` / etc. sources directly):
+Build and preview the production bundle:
 
-```powershell
-# from the repo root
-npx serve .
-# or
-python -m http.server 8000
+```bash
+npm run build
+npm run preview
 ```
 
-Then open `http://localhost:8000/XPC/`.
+Deploy: pushing to `main` builds and publishes `dist/` to GitHub Pages automatically.
+Legacy static build (double-clickable, no build step) is tagged `legacy-static`.
 
 ## How XP is calculated
 
-Level curve (`xpForLevel` / `cumulXP` in `XPC/js/xp-calculator.js`):
+Level curve (`xpForLevel` / `cumulXP` in `src/lib/xp-calculator.js`):
 
 | Level | XP for that level |
 |-------|-------------------|
@@ -74,21 +70,21 @@ Slider scaling note: donation sliders are scaled in the app (`troops × 500`, `s
 ## Project structure
 
 ```text
-XPC/
-  index.html          # all UI: profile, activity, donations, builders, war, presets, results, chart
-  css/
-    main.css          # layout, cards, sliders
-    components.css    # result cards, breakdown rows, warnings
-    themes.css        # gold theme
-  js/
-    app.js            # shipped bundle — everything inlined, no imports (this is what index.html loads)
-    xp-calculator.js  # modular XP engine (level curve + per-source calculators)
-    utils.js          # fmtK, clamp, sanitizeHTML, generateId, deepClone, …
-    presets.js        # localStorage presets (max 50, 5 MB cap), export/import
-    chart.js          # Chart.js wrapper (init / update / export)
+src/
+  main.js            # app boot, input wiring, render, juice
+  styles.css         # Tailwind + design tokens (gold/night/wood/stone)
+  lib/
+    xp-calculator.js # XP engine (level curve + per-source calculators)
+    utils.js         # fmtK, clamp, sanitizeHTML, generateId, deepClone, …
+    presets.js       # localStorage presets (max 50, 5 MB cap), export/import
+    results.js       # duration formatting, warnings, breakdown percentages
+    state.js         # default state + input clamping + param mapping
+    chart.js         # Chart.js wrapper with lazy CDN loading
+    juice.js         # tween frames, celebration rules, share-card text
+scripts/             # node check scripts (parity, state, results, juice, presets)
 ```
 
-`app.js` duplicates the modular sources so the page works over `file://`. If you edit `xp-calculator.js` / `utils.js` / `presets.js` / `chart.js`, re-bundle the changed logic into `app.js`.
+Vite bundles `src/` into `dist/`; the GitHub Actions workflow deploys `dist/` to Pages.
 
 ## Presets
 
@@ -98,16 +94,16 @@ XPC/
 
 ## Tech
 
-- Vanilla HTML + CSS + JS, no framework, no build step
+- Vanilla JS ES modules + Vite build, Tailwind CSS v4
 - [Chart.js 4.4.1](https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js) via CDN (optional — app runs without it)
 - Fonts: Inter + Cinzel via Google Fonts (optional — falls back to system fonts offline)
-- PWA: `manifest.json` + `sw.js` (cache `coc-xp-v1`) + `offline.html` — installable when served over HTTP; `file://` use unaffected
-- Design tokens in `XPC/css/themes.css` (`--space-*`, `--radius-*`, `--font-body`, `--text-*`)
+- PWA: `vite-plugin-pwa` (Workbox precache + runtime caching for fonts/CDN) — installable when served over HTTP
+- Design tokens in `src/styles.css` Tailwind `@theme` (`--color-gold/night/wood/stone`, `--font-display/body`)
 
 ## Limitations
 
 - XP rates/level curve are approximations for planning — verify against in-game values for your Town Hall / Clan Perks / events.
 - Donation caps noted in the UI (100k troop spaces, 10k spell spaces, 1k sieges/day) are display hints, not enforced.
 - Presets live in the browser that saved them — use Export/Import to move them between devices.
-- Service worker requires HTTP(S) — it is skipped automatically on `file://`.
+- Service worker requires HTTP(S). For `file://` use, grab the legacy static build at tag `legacy-static`.
 - Sora/Chart.js load from CDN with system-font/no-chart fallback offline.
