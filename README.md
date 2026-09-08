@@ -96,7 +96,7 @@ Vite bundles `src/` into `dist/`; the GitHub Actions workflow deploys `dist/` to
 
 - Vanilla JS ES modules + Vite build, Tailwind CSS v4
 - [Chart.js 4.4.1](https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js) via CDN (optional — app runs without it)
-- Fonts: Inter + Cinzel via Google Fonts (optional — falls back to system fonts offline)
+- Fonts: Inter + Cinzel + Sora via Google Fonts (optional — falls back to system fonts offline)
 - PWA: `vite-plugin-pwa` (Workbox precache + runtime caching for fonts/CDN) — installable when served over HTTP
 - Design tokens in `src/styles.css` Tailwind `@theme` (`--color-gold/night/wood/stone`, `--font-display/body`)
 
@@ -106,4 +106,4 @@ Vite bundles `src/` into `dist/`; the GitHub Actions workflow deploys `dist/` to
 - Donation caps noted in the UI (100k troop spaces, 10k spell spaces, 1k sieges/day) are display hints, not enforced.
 - Presets live in the browser that saved them — use Export/Import to move them between devices.
 - Service worker requires HTTP(S). For `file://` use, grab the legacy static build at tag `legacy-static`.
-- Sora/Chart.js load from CDN with system-font/no-chart fallback offline.
+- Fonts/Chart.js load from CDN with system-font/no-chart fallback offline.
