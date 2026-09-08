@@ -31,13 +31,13 @@
     </div>
   </header>
 
-  <main id="app" class="mx-auto max-w-5xl space-y-4 px-4 py-6">
+  <main id="app" class="app-grid mx-auto max-w-5xl space-y-4 px-4 py-6">
     <!-- Profile -->
     <div class="panel p-5" id="c-profile">
       <p class="font-display font-bold text-[#AA8800]"><span aria-hidden="true">🛡️</span> Your Profile</p>
       <div class="field">
         <div class="fl"><span class="fl-label">Current XP Level</span></div>
-        <input type="number" id="curLvl" min="1" max="499" value="1">
+        <input type="number" id="curLvl" aria-label="Current XP level" min="1" max="499" value="1">
       </div>
       <div class="field">
         <div class="fl">
@@ -48,7 +48,7 @@
       </div>
       <div class="field">
         <div class="fl"><span class="fl-label">Target XP Level</span></div>
-        <input type="number" id="tgtLvl" min="2" max="500" value="2">
+        <input type="number" id="tgtLvl" aria-label="Target XP level" min="2" max="500" value="2">
       </div>
     </div>
 
@@ -151,7 +151,7 @@
       <p class="font-display font-bold text-[#8899aa]"><span aria-hidden="true">💾</span> Presets</p>
       <div>
         <button id="save-preset-btn" type="button">Save Current</button>
-        <select id="load-preset-select">
+        <select id="load-preset-select" aria-label="Select preset">
           <option value="">Select a preset...</option>
         </select>
         <button id="delete-preset-btn" type="button">Delete</button>

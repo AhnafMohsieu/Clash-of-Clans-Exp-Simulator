@@ -14,7 +14,13 @@ let latestXpData = null;
 let chartOpen = typeof matchMedia === 'function' ? matchMedia('(min-width: 640px)').matches : true;
 
 // --- Juice (Task 6): all motion/sound gated on motionOK ---
-const motionOK = typeof matchMedia === 'function' ? !matchMedia('(prefers-reduced-motion: reduce)').matches : true;
+let motionOK = typeof matchMedia === 'function' ? !matchMedia('(prefers-reduced-motion: reduce)').matches : true;
+if (typeof matchMedia === 'function') {
+  try {
+    const mq = matchMedia('(prefers-reduced-motion: reduce)');
+    mq.addEventListener('change', (ev) => { motionOK = !ev.matches; });
+  } catch (err) { /* noop */ }
+}
 let lastNeeded = null;
 let celebratePrev = null;
 let soundOn = false;
@@ -466,8 +472,8 @@ function bindKeyboardShortcuts() {
     const t = e.target;
     if (t && (t.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName))) return;
     const key = typeof e.key === 'string' ? e.key.toLowerCase() : e.key;
-    if (e.ctrlKey && key === 's') { e.preventDefault(); showSavePresetModal(); }
-    if (e.ctrlKey && key === 'e') { e.preventDefault(); exportResults(); }
+    if ((e.ctrlKey || e.metaKey) && key === 's') { e.preventDefault(); showSavePresetModal(); }
+    if ((e.ctrlKey || e.metaKey) && key === 'e') { e.preventDefault(); exportResults(); }
     if (e.key === '?' && !e.ctrlKey && !e.altKey) showHelpModal();
     if (e.key === 'Escape') closeAllModals();
   });
