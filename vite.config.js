@@ -3,7 +3,7 @@ import tailwindcss from '@tailwindcss/vite';
 import { VitePWA } from 'vite-plugin-pwa';
 
 export default defineConfig({
-  base: '/Clash-of-Clans-XP-Simulator/',
+  base: '/Clash-of-Clans-Exp-Simulator/',
   plugins: [
     tailwindcss(),
     VitePWA({
