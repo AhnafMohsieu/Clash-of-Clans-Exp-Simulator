@@ -6,6 +6,19 @@ A Vite-built, phone-first web app that calculates exactly how long it takes to r
 
 Drag the sliders — it instantly shows XP needed, daily XP, time to target, and a per-source breakdown with a bar chart.
 
+<p align="center">
+  <a href="https://ahnafmohsieu.github.io/Clash-of-Clans-Exp-Simulator/">
+    <img src="docs/screenshots/desktop.png" alt="XP farming simulator with sliders and results breakdown" width="100%">
+  </a>
+</p>
+
+<details>
+  <summary>Mobile view</summary>
+  <p align="center">
+    <img src="docs/screenshots/mobile.png" alt="XP farming simulator on mobile" width="320">
+  </p>
+</details>
+
 > Fan-made planning tool. Not affiliated with or endorsed by Supercell.
 
 ## Features
@@ -107,3 +120,9 @@ Vite bundles `src/` into `dist/`; the GitHub Actions workflow deploys `dist/` to
 - Presets live in the browser that saved them — use Export/Import to move them between devices.
 - Service worker requires HTTP(S). For `file://` use, grab the legacy static build at tag `legacy-static`.
 - Fonts/Chart.js load from CDN with system-font/no-chart fallback offline.
+
+
+## License
+
+All rights reserved. See [LICENSE](LICENSE). The code and content are published
+for viewing and evaluation only.
