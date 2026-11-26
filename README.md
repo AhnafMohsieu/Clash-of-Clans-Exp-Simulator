@@ -1,5 +1,9 @@
 # Clash of Clans — XP Farming Simulator
 
+[![Live site](https://img.shields.io/badge/live-view-0e5a6b?style=flat-square)](https://ahnafmohsieu.github.io/Clash-of-Clans-Exp-Simulator/) [![License](https://img.shields.io/badge/license-all%20rights%20reserved-lightgrey?style=flat-square)](LICENSE)
+
+> ← [All projects](https://ahnafmohsieu.github.io/Portfolio/hub/)
+
 ▶️ **Play it live:** https://ahnafmohsieu.github.io/Clash-of-Clans-Exp-Simulator/
 
 A Vite-built, phone-first web app that calculates exactly how long it takes to reach your target XP level in Clash of Clans based on your daily activity.
